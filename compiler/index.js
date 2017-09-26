@@ -200,6 +200,7 @@ function handleNode(child) {
 			freeRegister(d);
 		break;
 		case 'ThrowStatement': 
+			e = handleExpression(child.argument);
 			let tr = tryStack.length == 0 ? null : tryStack[tryStack.length - 1];
 			if(tr == null) {
 				r = requestRegister();
@@ -207,11 +208,11 @@ function handleNode(child) {
 				ins('jz', reg(r), ':eof');
 				ins('sub', reg(r), 2, reg(r));
 				ins('getprop', reg(124), reg(r), reg(r));
-				ins('setprop', reg(r), 't', 1);
+				ins('setprop', reg(r), str('h'), 1);
 				freeRegister(r);
-				handleNode({type: 'ReturnStatement', argument: child.argument});
+				handleNode({type: 'ReturnStatement', argument: e});
+				freeRegister(e);
 			}else{
-				let e = handleExpression(child.argument);
 				ins('mov', reg(e), reg(123));
 				freeRegister(e);
 				ins('jmp', ':' + tr.handler);
@@ -690,9 +691,9 @@ function handleNode(child) {
 			ins('getprop', reg(124), str('length'), reg(r2));
 			ins('sub', reg(r2), 1, reg(r2));
 			ins('getprop', reg(124), reg(r2), reg(r2));
-			ins('getprop', reg(r2), str('t'), reg(r2));
-			ins('jnz', reg(r2), ':pcall_' + i);
-			handleNode({type: 'ThrowStatement', argument: r2});
+			ins('getprop', reg(r2), str('h'), reg(r2));
+			ins('jz', reg(r2), ':pcall_' + i);
+			handleNode({type: 'ThrowStatement', argument: 123});
 			freeRegister(r2);
 			ins(':pcall_' + i);
 			ins('mov', reg(123), reg(child.register))

@@ -19,7 +19,7 @@ class Context {
 				this.registers[i] = undefined;
 			}
 			this.registers[123] = undefined;
-			this.registers[124] = [];
+			this.registers[124] = [{h: 0, t: global}];
 			this.registers[125] = 0;
 		}
 		this.variables = variables || {};
@@ -433,6 +433,18 @@ let instructions = [
 	//context
 	function(ctx) {
 		writeArg(ctx, ctx);
+	},
+
+	//debugging
+	//report
+	function(ctx) {
+		console.log('reported:', readArg(ctx));
+	},
+	//dump
+	function(ctx) {
+		for(let i = 0; i < ctx.registers.length; i++) {
+			console.log(i + ':', readArg(ctx));
+		}
 	},
 ]
 

@@ -100,6 +100,10 @@ let instructions = [
 
 	//VM interface
 	new Instruction('context', ['r']),
+
+	//debugging
+	new Instruction('report', ['rc']),
+	new Instruction('dump', []),
 ]
 
 String.prototype.splitC = function(delim, seqs) {
