@@ -62,6 +62,10 @@ function str(arg) {
 }
 
 function handleExpression(exp) {
+	if(typeof exp == 'number') {
+		registers[exp]++;
+		return exp;
+	}
 	handleNode(exp);
 	if('register' in exp) {
 		return exp.register;
@@ -76,6 +80,8 @@ let loopStack = [];
 let branchCounter = 0;
 let varMap = {};
 let regStack = [];
+let tryStack = [];
+let tryStackStack = [];
 let argMap = [];
 let functionMap = [];
 
@@ -137,8 +143,12 @@ function handleNode(child) {
 			ins('call_0', reg(124), reg(r), reg(r));
 			rl = requestRegister();
 			ins('getprop', reg(r), str('e'), reg(rl));
-			ins('getprop', reg(r), str('r'), reg(r));
-			ins('setprop', reg(rl), 125, reg(r));
+			if(child.returnLoc == null) {
+				ins('getprop', reg(r), str('r'), reg(r));
+				ins('setprop', reg(rl), 125, reg(r));
+			}else{
+				ins('setprop', reg(rl), 125, child.returnLoc);
+			}
 			ins('setprop', reg(rl), 123, reg(123));
 			ins('context', reg(r));
 			ins('setprop', reg(r), str('registers'), reg(rl));
@@ -190,10 +200,56 @@ function handleNode(child) {
 			freeRegister(d);
 		break;
 		case 'ThrowStatement': 
-			//TODO
+			let tr = tryStack.length == 0 ? null : tryStack[tryStack.length - 1];
+			if(tr == null) {
+				r = requestRegister();
+				ins('getprop', reg(124), str('length'), reg(r));
+				ins('jz', reg(r), ':eof');
+				ins('sub', reg(r), 2, reg(r));
+				ins('getprop', reg(124), reg(r), reg(r));
+				ins('setprop', reg(r), 't', 1);
+				freeRegister(r);
+				handleNode({type: 'ReturnStatement', argument: child.argument});
+			}else{
+				let e = handleExpression(child.argument);
+				ins('mov', reg(e), reg(123));
+				freeRegister(e);
+				ins('jmp', ':' + tr.handler);
+			}
 		break;
 		case 'TryStatement': 
-			//TODO
+			i = branchCounter++;
+			ins(':try_' + i);
+			tryStack.push({start: 'try_' + i, handler: (child.handler != null ? ('trycatch_' + i) : ('tryfinish_' + i))});
+			handleNode(child.block);
+			tryStack.pop();
+			if(child.handler != null) {
+				ins('jmp', ':tryfinish_' + i);
+				ins(':trycatch_' + i);
+				if(child.handler.param != null) {
+					varMap[child.handler.param.name] = 123;
+				}
+				handleNode(child.handler.body);
+				if(child.handler.param != null) {
+					delete varMap[child.handler.param.name];
+				}
+			}
+			ins(':tryfinish_' + i);
+			if(child.finalizer != null) {
+				handleNode(child.finalizer);
+			}
+			freeRegister(r);
+		break;
+		case 'WhileStatement':
+			i = branchCounter++;
+			ins(':while_' + i);
+			e = handleExpression(child.test);
+			ins('jz', e, ':while_' + i + 'end');
+			freeRegister(e);
+			loopStack.push({name: 'while_' + i, endname: 'while_' + i + 'end'});
+			handleNode(child.body);
+			ins('jmp', ':while_' + i);
+			ins(':while_' + i + 'end');
 		break;
 		case 'DoWhileStatement': 
 			i = branchCounter++;
@@ -267,6 +323,8 @@ function handleNode(child) {
 			functionMap.push(name);
 			let oldArgMap = argMap;
 			let oldVarMap = varMap;
+			tryStackStack.push(tryStack);
+			tryStack = [];
 			varMap = {};
 			regStack.push(registers);
 			let rss = regStack.length;
@@ -294,6 +352,7 @@ function handleNode(child) {
 			freeRegister(r);
 			argMap = oldArgMap;
 			varMap = oldVarMap;
+			tryStack = tryStackStack.pop();
 			registers = regStack.pop();
 			ins(':funcend_' + name);
 			if(child.type == 'FunctionExpression') {
@@ -627,8 +686,15 @@ function handleNode(child) {
 			ins('call_1', reg(124), reg(r), reg(r1), reg(r));
 			ins('context', reg(r));
 			ins('setprop', reg(r), str('registers'), reg(r2))
-			freeRegister(r2);
 			ins(':call_' + i);
+			ins('getprop', reg(124), str('length'), reg(r2));
+			ins('sub', reg(r2), 1, reg(r2));
+			ins('getprop', reg(124), reg(r2), reg(r2));
+			ins('getprop', reg(r2), str('t'), reg(r2));
+			ins('jnz', reg(r2), ':pcall_' + i);
+			handleNode({type: 'ThrowStatement', argument: r2});
+			freeRegister(r2);
+			ins(':pcall_' + i);
 			ins('mov', reg(123), reg(child.register))
 			freeRegister(r);
 			freeRegister(r1);
@@ -672,6 +738,7 @@ function recurseNode(node) {
 }
 
 recurseNode(xf.body);
+ins(':eof');
 
 fs.writeFileSync(process.argv[3], asm);
 //console.log(asm);
