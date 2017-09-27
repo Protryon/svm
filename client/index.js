@@ -270,61 +270,6 @@ let instructions = [
 		let th = readArg(ctx);
 		writeArg(ctx, readArg(ctx).apply(th, [readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx)]));
 	},
-	//new_0
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, []));
-	},
-	//new_1
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, [readArg(ctx)]));
-	},
-	//new_2
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, [readArg(ctx), readArg(ctx)]));
-	},
-	//new_3
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, [readArg(ctx), readArg(ctx), readArg(ctx)]));
-	},
-	//new_4
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, [readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx)]));
-	},
-	//new_5
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, [readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx)]));
-	},
-	//new_6
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, [readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx)]));
-	},
-	//new_7
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, [readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx)]));
-	},
-	//new_8
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, [readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx)]));
-	},
-	//new_9
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, [readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx)]));
-	},
-	//new_10
-	function(ctx) {
-		let th = readArg(ctx);
-		writeArg(ctx, readArg(ctx).constructor.apply(th, [readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx), readArg(ctx)]));
-	},
 	//obj
 	function(ctx) {
 		writeArg(ctx, {});

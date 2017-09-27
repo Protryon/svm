@@ -734,6 +734,12 @@ function handleNode(child) {
 			});
 			e = handleExpression(child.callee);
 			r = requestRegister();
+			if(child.type == 'NewExpression') {
+				ins('obj', reg(child.register));
+				ins('getprop', reg(e), 'prototype', reg(r));
+				ins('setprop', reg(child.register), '__proto__', reg(r));
+				refreshRegister(r);
+			}
 			i = branchCounter++;
 			ins('typeof', reg(e), reg(r));
 			r1 = requestRegister();
@@ -783,7 +789,17 @@ function handleNode(child) {
 			ins('mov', reg(123), reg(child.register))
 			ins('jmp', ':fffi_' + i)
 			ins(':ffi_' + i)
-			ins((child.type == 'CallExpression' ? 'call' : 'new') + '_' + child.arguments.length, reg(e), reg(e), args.join(' '), reg(child.register));
+			if(child.type == 'NewExpression') r = requestRegister();
+			ins('call_' + child.arguments.length, (child.type == 'NewExpression' ? reg(child.register) : reg(e)), reg(e), args.join(' '), (child.type == 'NewExpression' ? reg(r) : reg(child.register)));
+			if(child.type == 'NewExpression') {
+				r2 = requestRegister();
+				ins('neq', reg(r), 0, reg(r2));
+				ins('jz', reg(r2), ':pcall2_' + i);
+				freeRegister(r2);
+				ins('mov', reg(r), reg(child.register));
+				ins(':pcall2_' + i);
+				freeRegister(r);
+			}
 			freeRegister(e);
 			args.forEach(v => {
 				freeRegister(v);
