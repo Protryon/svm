@@ -203,6 +203,7 @@ let instructionRules = {
 		},
 		improves: ['size', 'speed'],
 		worsens: [],
+		type: 'optimization',
 	},
 	//code factoring
 }
@@ -242,6 +243,7 @@ let registerRules = {
 		},
 		improves: ['speed'],
 		worsens: [],
+		type: 'optimization',
 	},
 	inlineConstants: {
 		f: function(r) {
@@ -266,6 +268,7 @@ let registerRules = {
 		},
 		improves: ['reg', 'size'],
 		worsens: ['size'],
+		type: 'optimization',
 	},
 	uselessSets: {
 		f: function(f) {
@@ -283,6 +286,7 @@ let registerRules = {
 		}
 		improves: ['size', 'speed'],
 		worsens: [],
+		type: 'optimization',
 	}
 	//GVN
 };
