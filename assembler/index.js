@@ -149,7 +149,13 @@ function assemble(asm) {
 	let out = [];
 	let lines = asm.splitC('\n', ['\'', '"', '`']);
 	let delayedLabels = [];
-	lines.filter(v => {
+	lines.map(v => {
+		let vi = v.indexOf('//');
+		if(vi >= 0) {
+			return v.substring(0, vi);
+		}
+		return v;
+	}).filter(v => {
 		return v.trim().length > 0;
 	}).forEach((line, lino) => {
 		let args = line.trim().splitC(' ', ['\'', '"', '`']).filter(v => {

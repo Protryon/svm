@@ -12,7 +12,6 @@ Run `./run.sh` with the repository directory as your current working directory.
 ## Planned Features
 
 ### Functionality
-* Try/catch & throw
 * Complete native ES6 support without Babel
 * Outward FFI (calling functions inside the VM from outside)
 * With statements
