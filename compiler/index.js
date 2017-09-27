@@ -54,6 +54,12 @@ function requestRegister() {
 	throw "Out of registers!";
 }
 
+function claimRegister(r) {
+	if(r >= 123) return;
+	registers[r]++;
+	asm += '//alloc' + r + '\n';
+}
+
 function freeRegister(r) {
 	if(typeof r == 'string') {
 		if(r.startsWith('r')) r = parseInt(r.substring(1));
@@ -65,6 +71,7 @@ function freeRegister(r) {
 }
 
 function refreshRegister(r) {
+	if(r >= 123) return;
 	asm += '//free' + r + '\n'
 	asm += '//alloc' + r + '\n'
 }
@@ -104,8 +111,10 @@ function handleNode(child) {
 		case 'Identifier':
 			if(child.name in varMap) {
 				child.register = varMap[child.name];
+				claimRegister(child.register);
 			}else if(argMap.includes(child.name)) {
 				child.register = argMap.indexOf(child.name);
+				claimRegister(child.register);
 			}else if(functionMap.includes(child.name)) {
 				child.register = ':func_' + child.name;
 			}else{
@@ -116,7 +125,7 @@ function handleNode(child) {
 			break;
 		case 'RegExpLiteral': 
 			child.register = requestRegister(r);
-			ins('regex', str(child.pattern), str(flags), reg(child.register));
+			ins('regex', str(child.pattern), str(child.flags), reg(child.register));
 		break;
 		case 'NullLiteral': 
 			child.register = requestRegister(r);
@@ -172,16 +181,33 @@ function handleNode(child) {
 			freeRegister(r1);
 			freeRegister(r);
 		break;
+		case 'LabeledStatement':
+			child.body.label = child.label.name;
+		break;
 		case 'BreakStatement': 
 			if(child.label != null) {
-				ins('jmp', ':' + child.label.name + 'end')
+				let loop;
+				for(let i = loopStack.length - 1; i >= 0; i--) {
+					if(loopStack[i].label == child.label.name) {
+						loop = loopStack[i];
+						break;
+					}
+				}
+				if(loop != null) ins('jmp', ':' + loop.endName)
 			}else{
 				ins('jmp', ':' + loopStack[loopStack.length - 1].endname);
 			}
 		break;
 		case 'ContinueStatement': 
 			if(child.label != null) {
-				ins('jmp', ':' + child.label.name)
+				let loop;
+				for(let i = loopStack.length - 1; i >= 0; i--) {
+					if(loopStack[i].label == child.label.name) {
+						loop = loopStack[i];
+						break;
+					}
+				}
+				if(loop != null) ins('jmp', ':' + loop.name);
 			}else{
 				ins('jmp', ':' + loopStack[loopStack.length - 1].name);
 			}
@@ -189,7 +215,7 @@ function handleNode(child) {
 		case 'IfStatement': 
 			i = branchCounter++;
 			e = handleExpression(child.test);
-			ins('jz', e, ':if_' + i);
+			ins('jz', reg(e), ':if_' + i);
 			freeRegister(e);
 			handleNode(child.consequent);
 			if(child.alternate != null) {
@@ -204,15 +230,21 @@ function handleNode(child) {
 		case 'SwitchStatement': 
 			i = branchCounter++;
 			let d = handleExpression(child.discriminant);
-			loopStack.push({endname: 'switch_' + i + '_case_' + (d.cases.length - 1), name : null});
-			for(let ci = 0; ci < d.cases.length; d++) {
-				let c = d.cases[ci];
+			loopStack.push({endname: 'switch_' + i + '_case_' + (child.cases.length - 1), name : null});
+			for(let ci = 0; ci < child.cases.length; ci++) {
+				let c = child.cases[ci];
 				if(c.test != null) {
 					e = handleExpression(c.test);
-					ins('jz', e, ':switch_' + i + '_case_' + ci);
+					r = requestRegister();
+					ins('eq', reg(d), reg(e), reg(r));
 					freeRegister(e);
+					ins('jz', reg(r), ':switch_' + i + '_case_' + ci);
+					freeRegister(r);
 				}
+				ins(':switch_' + i + '_case_start_' + ci);
 				recurseNode(c.consequent);
+				if(ci + 1 < child.cases.length)
+					ins('jmp', ':switch_' + i + '_case_start_' + (ci+1));
 				ins(':switch_' + i + '_case_' + ci);
 			}
 			freeRegister(d);
@@ -264,9 +296,9 @@ function handleNode(child) {
 			i = branchCounter++;
 			ins(':while_' + i);
 			e = handleExpression(child.test);
-			ins('jz', e, ':while_' + i + 'end');
+			ins('jz', reg(e), ':while_' + i + 'end');
 			freeRegister(e);
-			loopStack.push({name: 'while_' + i, endname: 'while_' + i + 'end'});
+			loopStack.push({name: 'while_' + i, endname: 'while_' + i + 'end', label: child.label});
 			handleNode(child.body);
 			ins('jmp', ':while_' + i);
 			ins(':while_' + i + 'end');
@@ -274,11 +306,11 @@ function handleNode(child) {
 		case 'DoWhileStatement': 
 			i = branchCounter++;
 			ins(':dowhile_' + i + 'start');
-			loopStack.push({name: 'dowhile_' + i, endname: 'dowhile_' + i + 'end'});
+			loopStack.push({name: 'dowhile_' + i, endname: 'dowhile_' + i + 'end', label: child.label});
 			handleNode(child.body);
 			ins(':dowhile_' + i);
 			e = handleExpression(child.test);
-			ins('jnz', e, ':dowhile_' + i + 'start');
+			ins('jnz', reg(e), ':dowhile_' + i + 'start');
 			freeRegister(e);
 			ins(':dowhile_' + i + 'end');
 		break;
@@ -287,14 +319,15 @@ function handleNode(child) {
 			if(child.init != null) {
 				handleNode(child.init);
 			}
-			loopStack.push({name: 'for_' + i, endname: 'for_' + i + 'end'});
+			loopStack.push({name: 'for_' + i + 'cont', endname: 'for_' + i + 'end', label: child.label});
 			ins(':for_' + i);
 			if(child.test != null) {
 				e = handleExpression(child.test);
-				ins('jz', e, ':for_' + i + 'end');
+				ins('jz', reg(e), ':for_' + i + 'end');
 				freeRegister(e);
 			}
 			handleNode(child.body);
+			ins(':for_' + i + 'cont');
 			if(child.update != null) freeRegister(handleExpression(child.update));
 			ins('jmp', ':for_' + i);
 			ins(':for_' + i + 'end');
@@ -311,21 +344,21 @@ function handleNode(child) {
 				forKey = handleExpression(child.left);
 			}
 			i = branchCounter++;
-			loopStack.push({name: 'foreach_' + i, endname: 'foreach_' + i + 'end'});
+			loopStack.push({name: 'foreach_' + i, endname: 'foreach_' + i + 'end', label: child.label});
 			r1 = requestRegister();
 			ins('getprop', reg(r), str('length'), reg(r1));
 			r2 = requestRegister();
 			ins('eq', reg(r1), 0, reg(r2));
-			ins('jnz', reg(r2), ':foreach_' + i);
+			ins('jnz', reg(r2), ':foreach_' + i + 'end');
 			refreshRegister(r2);
 			ins('mov', 0, reg(r2));
 			ins(':foreach_' + i);
 			ins('getprop', reg(r), reg(r2), reg(forKey));
-			freeRegister(r);
 			handleNode(child.body);
 			ins('add', reg(r2), 1, reg(r2));
 			r3 = requestRegister();
 			ins('le', reg(r2), reg(r1), reg(r3));
+			freeRegister(r);
 			freeRegister(r2);
 			freeRegister(r1);
 			ins('jnz', reg(r3), ':foreach_' + i);
@@ -383,8 +416,7 @@ function handleNode(child) {
 			registers = regStack.pop();
 			asm += '//popreg\n';
 			ins(':funcend_' + name);
-			if(child.type == 'FunctionExpression') {
-				debugger;
+			if(child.type == 'FunctionExpression' || child.type == 'ArrowFunctionExpression') {
 				child.register = ':func_' + name;
 			}
 		break;
@@ -414,13 +446,13 @@ function handleNode(child) {
 		break;
 		case 'ThisExpression': 
 			r = requestRegister();
-			ins('getprop', reg(124), 'length', reg(r));
+			ins('getprop', reg(124), str('length'), reg(r));
 			r1 = requestRegister();
 			ins('sub', reg(r), 1, reg(r1));
 			refreshRegister(r);
 			ins('getprop', reg(124), reg(r1), reg(r));
 			refreshRegister(r1);
-			ins('getprop', reg(r), 't', reg(r1))
+			ins('getprop', reg(r), str('t'), reg(r1))
 			child.register = r1;
 			freeRegister(r);
 		break;
@@ -457,9 +489,7 @@ function handleNode(child) {
 					//TODO
 				}else if(e.type == "ObjectProperty") {
 					let ex = handleExpression(e.value);
-					let exk = handleExpression(e.key);
-					ins('setprop', reg(r), reg(exk), reg(ex));
-					freeRegister(exk);
+					ins('setprop', reg(r), str(e.key.name), reg(ex));
 					freeRegister(ex);
 				}else if(e.type == "ObjectMethod") {
 					if(e.kind == "method") {
@@ -515,7 +545,7 @@ function handleNode(child) {
 			r = handleExpression(child.argument);
 			child.register = child.prefix ? r : requestRegister();
 			if(child.register != r) {
-				ins('mov', reg(child.register), reg(r));
+				ins('mov', reg(r), reg(child.register));
 			}
 			switch(child.operator) {
 				case '++':
@@ -643,7 +673,7 @@ function handleNode(child) {
 					ins('bit_and', reg(r), reg(r1), reg(r));
 				break;
 			}
-			freeRegister(r);
+			freeRegister(r1);
 		break;
 		case 'LogicalExpression':
 			i = branchCounter++;
@@ -725,7 +755,7 @@ function handleNode(child) {
 			ins('setprop', reg(r), 125, reg(e));
 			ins('setprop', reg(r), 124, reg(124));
 			args.forEach((v, index) => {
-				ins('setprop', reg(r), index, args.join(' '));
+				ins('setprop', reg(r), index, v);
 			});
 			ins('setprop', reg(r1), str('e'), reg(r2));
 			refreshRegister(r2);

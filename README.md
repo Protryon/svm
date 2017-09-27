@@ -29,7 +29,7 @@ Run `./run.sh` with the repository directory as your current working directory.
 * Enclaving + shuffling bytecode
 
 ### Performance
-* Compile-time hotspotting
+* Compile-time 'hotspotting'
 * Code factoring (very similar to enclaving)
 * Global value numbering
 * Dead code elimination

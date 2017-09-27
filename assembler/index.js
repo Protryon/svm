@@ -54,11 +54,11 @@ let instructions = [
 	new Instruction('call_3', ['rc', 'rc', 'rc', 'rc', 'rc', 'r']),
 	new Instruction('call_4', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
 	new Instruction('call_5', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
-	new Instruction('call_6', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
-	new Instruction('call_7', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
-	new Instruction('call_8', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
-	new Instruction('call_9', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
-	new Instruction('call_10', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
+	new Instruction('call_6', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
+	new Instruction('call_7', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
+	new Instruction('call_8', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
+	new Instruction('call_9', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
+	new Instruction('call_10', ['rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'rc', 'r']),
 	new Instruction('new_0', ['rc', 'rc', 'r']),
 	new Instruction('new_1', ['rc', 'rc', 'rc', 'r']),
 	new Instruction('new_2', ['rc', 'rc', 'rc', 'rc', 'r']),
@@ -206,7 +206,7 @@ function assemble(asm) {
 				j++;
 			}
 			arg = arg.toString().substring(j);
-			let n = parseInt(arg, 10);
+			let n = parseFloat(arg, 10);
 			if(!delayedLabel) {
 				if(!isRegister && ptrc) {
 					console.log(`Line ${lino + 1}: Constants cannot be pointers`);

@@ -139,11 +139,11 @@ let instructions = {
 	'call_3': ['get', 'get', 'get', 'get', 'get', 'set'],
 	'call_4': ['get', 'get', 'get', 'get', 'get', 'get', 'set'],
 	'call_5': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
-	'call_6': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
-	'call_7': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
-	'call_8': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
-	'call_9': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
-	'call_10': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
+	'call_6': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
+	'call_7': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
+	'call_8': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
+	'call_9': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
+	'call_10': ['get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'get', 'set'],
 	'new_0': ['get', 'get', 'set'],
 	'new_1': ['get', 'get', 'get', 'set'],
 	'new_2': ['get', 'get', 'get', 'get', 'set'],
@@ -271,11 +271,11 @@ let registerRules = {
 		type: 'optimization',
 	},
 	uselessSets: {
-		f: function(f) {
+		f: function(r) {
 			let ar = activeRegisters[r];
 			let lastGet = -1;
 			for(let get of ar.gets) {
-				if(get.line > lastGet) lastSet = get.line;
+				if(get.line > lastGet) lastGet = get.line;
 			}
 			for(let set of ar.sets) {
 				if(set.ins.startsWith('call') || set.ins.startsWith('new')) continue; // side affects
@@ -283,7 +283,7 @@ let registerRules = {
 					lines.splice(set.line, 1, []);
 				}
 			}
-		}
+		},
 		improves: ['size', 'speed'],
 		worsens: [],
 		type: 'optimization',
@@ -293,46 +293,52 @@ let registerRules = {
 let regStack = [];
 
 lines.forEach((args, lino) => {
-	if(args.length == 0) return;
-	if(args.length == 1 && args[0].startsWith(':') && !args[0].includes(' ')) {
-		return;
-	}
-	if(args.length == 1 && args[0].startsWith('//')) {
-		if(args[0].startsWith('//alloc')) {
-			allocRegister(parseInt(args[0].substring(7), 10));
-		}else if(args[0].startsWith('//free')) {
-			freeRegister(parseInt(args[0].substring(6), 10));
-		}else if(args[0].startsWith('//pushreg')) {
-			regStack.push(activeRegisters);
-			activeRegisters = {};
-		}else if(args[0].startsWith('//popreg')) {
-			for(let r in activeRegisters) {
-				if(activeRegisters[r] == null) continue;
-				activeRegisters[r].ct = 1;
-				freeRegister(r);
-			}
-			activeRegisters = regStack.pop();
+	try{
+		if(args.length == 0) return;
+		if(args.length == 1 && args[0].startsWith(':') && !args[0].includes(' ')) {
+			return;
 		}
-		return;
-	}
-	let ins = instructions[args[0]];
-	if(ins == null) throw "Invalid instruction: " + args[0];
-	args.slice(1).forEach((v, i) => {
-		if(v.startsWith('r')) {
-			let r = parseInt(v.substring(1), 10);
-			if(r > 122) return;
-			let st = ins[i].split('/');
-			for(let sto of st) {
-				if(sto == 'get') {
-					activeRegisters[r].gets.push({line: lino, ins: args[0], argi: i});
-				}else if(sto == 'set' || sto == 'set_const') {
-					activeRegisters[r].sets.push({line: lino, ins: args[0], args: args.slice(1), cst: sto == 'set_const'});
+		if(args.length == 1 && args[0].startsWith('//')) {
+			if(args[0].startsWith('//alloc')) {
+				allocRegister(parseInt(args[0].substring(7), 10));
+			}else if(args[0].startsWith('//free')) {
+				freeRegister(parseInt(args[0].substring(6), 10));
+			}else if(args[0].startsWith('//pushreg')) {
+				regStack.push(activeRegisters);
+				activeRegisters = {};
+			}else if(args[0].startsWith('//popreg')) {
+				for(let r in activeRegisters) {
+					if(activeRegisters[r] == null) continue;
+					activeRegisters[r].ct = 1;
+					freeRegister(r);
+				}
+				activeRegisters = regStack.pop();
+			}
+			return;
+		}
+		let ins = instructions[args[0]];
+		if(ins == null || (args.length - 1) != ins.length) {
+			throw "Invalid instruction: " + args[0];
+		}
+		args.slice(1).forEach((v, i) => {
+			if(v.startsWith('r')) {
+				let r = parseInt(v.substring(1), 10);
+				if(r > 122) return;
+				let st = ins[i].split('/');
+				for(let sto of st) {
+					if(sto == 'get') {
+						activeRegisters[r].gets.push({line: lino, ins: args[0], argi: i});
+					}else if(sto == 'set' || sto == 'set_const') {
+						activeRegisters[r].sets.push({line: lino, ins: args[0], args: args.slice(1), cst: sto == 'set_const'});
+					}
 				}
 			}
+		});
+		for(let key of Object.keys(instructionRules)) {
+			instructionRules[key].f(lino, args[0], args.slice(1));
 		}
-	});
-	for(let key of Object.keys(instructionRules)) {
-		instructionRules[key].f(lino, args[0], args.slice(1));
+	}catch(e) {
+		console.log(e.stack, 'Line: ' + lino);
 	}
 });
 
