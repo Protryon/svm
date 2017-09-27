@@ -391,6 +391,11 @@ function handleNode(child) {
 			ins('obj', reg(r2));
 			ins('setprop', reg(r2), str('func'), ':funccall_' + name);
 			ins('setprop', reg(r), str('call'), reg(r2));
+			refreshRegister(r2);
+			ins('obj', reg(r2));
+			ins('setprop', reg(r2), str('func'), ':funcapply_' + name);
+			ins('setprop', reg(r), str('apply'), reg(r2));
+			//TODO: function.bind?
 			freeRegister(r2);
 			ins('obj', reg(r1));
 			ins('setprop', reg(r), str('prototype'), reg(r1));
@@ -398,7 +403,6 @@ function handleNode(child) {
 			freeRegister(r1);
 			freeRegister(r);
 			ins('jmp', ':funcend_' + name)
-			ins(':funccall_' + name);
 			functionMap.push(name);
 			let oldArgMap = argMap;
 			let oldVarMap = varMap;
@@ -418,6 +422,33 @@ function handleNode(child) {
 			argMap = child.params.map(v => {
 				return v.name;
 			});
+			ins(':funcapply_' + name);
+			if(argMap.length == 0) {
+				requestRegister();
+				requestRegister();
+			}else if(argMap.length == 1) {
+				requestRegister();
+			}
+			r = requestRegister();
+			ins('getprop', reg(124), str('length'), reg(r));
+			r1 = requestRegister();
+			ins('sub', reg(r), 1, reg(r1));
+			refreshRegister(r);
+			ins('getprop', reg(124), reg(r1), reg(r));
+			freeRegister(r1);
+			ins('setprop', reg(r), str('t'), reg(0));
+			freeRegister(r);
+			for(let i = 0; i < argMap.length; i++) {
+				ins('getprop', reg(1), i, reg(i));
+			}
+			if(argMap.length == 0) {
+				freeRegister(0);
+				freeRegister(1);
+			}else if(argMap.length == 1) {
+				freeRegister(1);
+			}
+			ins('jmp', ':func_' + name);
+			ins(':funccall_' + name);
 			requestRegister(); // makes up for argument lost
 			r = requestRegister();
 			ins('getprop', reg(124), str('length'), reg(r));
