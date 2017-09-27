@@ -144,9 +144,8 @@ function assemble(asm) {
 			return v.substring(0, vi);
 		}
 		return v;
-	}).filter(v => {
-		return v.trim().length > 0;
 	}).forEach((line, lino) => {
+		if(line.trim().length == 0) return;
 		let args = line.trim().splitC(' ', ['\'', '"', '`']).filter(v => {
 			return v.trim().length > 0;
 		});
@@ -225,6 +224,10 @@ function assemble(asm) {
 				out.push(...buf);
 			}else if(!delayedLabel && !isRegister){
 				out.push(126);
+				if((!arg.startsWith('\'') && !arg.startsWith('"') && !arg.startsWith('`')) || (!arg.endsWith('\'') && !arg.endsWith('"') && !arg.endsWith('`'))) {
+					console.log(`Line ${lino + 1}: Invalid string constant`);
+					return;
+				}
 				arg = arg.substring(1, arg.length - 1).replace(new RegExp('\\' + arg.substring(0, 1), 'g'), arg.substring(0, 1));
 				let rarg = [];
 				for(let i = 0; i < arg.length; i++) {

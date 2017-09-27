@@ -82,7 +82,9 @@ function str(arg) {
 
 function handleExpression(exp) {
 	if(typeof exp == 'number') {
-		asm += '//alloc' + exp + '\n'
+		if(exp < 123) {
+			asm += '//alloc' + exp + '\n'
+		}
 		registers[exp]++;
 		return exp;
 	}
@@ -116,7 +118,11 @@ function handleNode(child) {
 				child.register = argMap.indexOf(child.name);
 				claimRegister(child.register);
 			}else if(functionMap.includes(child.name)) {
-				child.register = ':func_' + child.name;
+				child.register = requestRegister();
+				r = requestRegister();
+				ins('add', str('class_'), ':func_' + child.name, reg(r));
+				ins('getvar', reg(r), reg(child.register));
+				freeRegister(r);
 			}else{
 				child.register = requestRegister();
 				ins('global', reg(child.register));
@@ -255,9 +261,11 @@ function handleNode(child) {
 			if(tr == null) {
 				r = requestRegister();
 				ins('getprop', reg(124), str('length'), reg(r));
-				ins('jz', reg(r), ':eof');
-				ins('sub', reg(r), 2, reg(r));
 				r1 = requestRegister();
+				ins('le', reg(r), 2, reg(r1));
+				ins('jnz', reg(r1), ':eof');
+				ins('sub', reg(r), 2, reg(r));
+				refreshRegister(r1);
 				ins('getprop', reg(124), reg(r), reg(r1));
 				freeRegister(r);
 				ins('setprop', reg(r1), str('h'), 1);
@@ -372,8 +380,25 @@ function handleNode(child) {
 				throw "Unexpected unnamed function: exports not supported";
 			}
 			let name = child.id == null || child.id.name == null ? "anon_" + branchCounter++ : child.id.name;
+			r = requestRegister();
+			ins('obj', reg(r));
+			r1 = requestRegister();
+			ins('add', str('class_'), ':func_' + name, reg(r1));
+			ins('setvar', reg(r1), reg(r));
+			refreshRegister(r1);
+			ins('setprop', reg(r), str('func'), ':func_' + name);
+			r2 = requestRegister();
+			ins('obj', reg(r2));
+			ins('setprop', reg(r2), str('func'), ':funccall_' + name);
+			ins('setprop', reg(r), str('call'), reg(r2));
+			freeRegister(r2);
+			ins('obj', reg(r1));
+			ins('setprop', reg(r), str('prototype'), reg(r1));
+			ins('setprop', reg(r1), str('constructor'), ':func_' + name);
+			freeRegister(r1);
+			freeRegister(r);
 			ins('jmp', ':funcend_' + name)
-			ins(':func_' + name);
+			ins(':funccall_' + name);
 			functionMap.push(name);
 			let oldArgMap = argMap;
 			let oldVarMap = varMap;
@@ -385,11 +410,29 @@ function handleNode(child) {
 			let rss = regStack.length;
 			registers = [];
 			for(let i = 0; i < 126; i++) {
+				if(i < child.params.length) {
+					asm += '//alloc' + i + '\n';
+				}
 				registers.push(i < child.params.length ? 1 : 0);
 			}
 			argMap = child.params.map(v => {
 				return v.name;
 			});
+			requestRegister(); // makes up for argument lost
+			r = requestRegister();
+			ins('getprop', reg(124), str('length'), reg(r));
+			r1 = requestRegister();
+			ins('sub', reg(r), 1, reg(r1));
+			refreshRegister(r);
+			ins('getprop', reg(124), reg(r1), reg(r));
+			freeRegister(r1);
+			ins('setprop', reg(r), str('t'), reg(0));
+			freeRegister(r);
+			for(let i = 1; i < argMap.length + 1; i++) {
+				ins('mov', reg(i), reg(i - 1));
+			}
+			freeRegister(argMap.length);
+			ins(':func_' + name);
 			if(child.type == 'ArrowFunctionExpression' && child.expression) {
 				handleNode({type: 'ReturnStatement', argument: child.body});
 			}else handleNode(child.body);
@@ -632,7 +675,7 @@ function handleNode(child) {
 			freeRegister(r1);
 		break;
 		case 'AssignmentExpression':
-			r = handleExpression(child.left);
+			r = child.left.type == 'MemberExpression' ? requestRegister() : handleExpression(child.left);
 			r1 = handleExpression(child.right);
 			child.register = r;
 			switch(child.operator) {
@@ -672,6 +715,17 @@ function handleNode(child) {
 				case '&=':
 					ins('bit_and', reg(r), reg(r1), reg(r));
 				break;
+			}
+			if(child.left.type == 'MemberExpression') {
+				e = handleExpression(child.left.object);
+				if(child.computed) {
+					let v = handleExpression(child.left.property);
+					ins('setprop', reg(e), reg(v), reg(r))
+					freeRegister(v);
+				}else{
+					ins('setprop', reg(e), str(child.left.property.name), reg(r));
+				}
+				freeRegister(e);
 			}
 			freeRegister(r1);
 		break;
@@ -736,8 +790,8 @@ function handleNode(child) {
 			r = requestRegister();
 			if(child.type == 'NewExpression') {
 				ins('obj', reg(child.register));
-				ins('getprop', reg(e), 'prototype', reg(r));
-				ins('setprop', reg(child.register), '__proto__', reg(r));
+				ins('getprop', reg(e), str('prototype'), reg(r));
+				ins('setprop', reg(child.register), str('__proto__'), reg(r));
 				refreshRegister(r);
 			}
 			i = branchCounter++;
@@ -748,9 +802,12 @@ function handleNode(child) {
 			refreshRegister(r1);
 			ins('obj', reg(r1));
 			ins('setprop', reg(r1), str('r'), ':call_' + i);
-			refreshRegister(r);
-			ins('global', reg(r));
-			ins('setprop', reg(r1), str('t'), reg(r));
+			if(child.type != 'NewExpression') {
+				refreshRegister(r);
+				ins('global', reg(r));
+			}
+			ins('setprop', reg(r1), str('t'), (child.type == 'NewExpression' ? reg(child.register) : reg(r)));
+			ins('setprop', reg(r1), str('h'), 0);
 			refreshRegister(r);
 			ins('context', reg(r));
 			r2 = requestRegister();
@@ -758,7 +815,10 @@ function handleNode(child) {
 			refreshRegister(r);
 			ins('arr', reg(r));
 			ins('setprop', reg(r), str('length'), 126);
-			ins('setprop', reg(r), 125, reg(e));
+			r3 = requestRegister();
+			ins('getprop', reg(e), str('func'), reg(r3));
+			ins('setprop', reg(r), 125, reg(r3));
+			freeRegister(r3);
 			ins('setprop', reg(r), 124, reg(124));
 			args.forEach((v, index) => {
 				ins('setprop', reg(r), index, v);
@@ -786,15 +846,25 @@ function handleNode(child) {
 			freeRegister(r);
 			handleNode({type: 'ThrowStatement', argument: 123});
 			ins(':pcall_' + i);
-			ins('mov', reg(123), reg(child.register))
-			ins('jmp', ':fffi_' + i)
-			ins(':ffi_' + i)
+			if(child.type == 'NewExpression') r = requestRegister();
+			ins('mov', reg(123), (child.type == 'NewExpression' ? reg(r) : reg(child.register)));
+			if(child.type == 'NewExpression') {
+				r2 = requestRegister();
+				ins('neq', reg(r), 0, reg(r2));
+				ins('jnz', reg(r2), ':pcall3_' + i);
+				freeRegister(r2);
+				ins('mov', reg(r), reg(child.register));
+				ins(':pcall3_' + i);
+				freeRegister(r);
+			}
+			ins('jmp', ':fffi_' + i);
+			ins(':ffi_' + i);
 			if(child.type == 'NewExpression') r = requestRegister();
 			ins('call_' + child.arguments.length, (child.type == 'NewExpression' ? reg(child.register) : reg(e)), reg(e), args.join(' '), (child.type == 'NewExpression' ? reg(r) : reg(child.register)));
 			if(child.type == 'NewExpression') {
 				r2 = requestRegister();
 				ins('neq', reg(r), 0, reg(r2));
-				ins('jz', reg(r2), ':pcall2_' + i);
+				ins('jnz', reg(r2), ':pcall2_' + i);
 				freeRegister(r2);
 				ins('mov', reg(r), reg(child.register));
 				ins(':pcall2_' + i);
