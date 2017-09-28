@@ -281,6 +281,7 @@ let registerRules = {
 		type: 'optimization',
 	}
 	//GVN
+	//register shuffling
 };
 let regStack = [];
 

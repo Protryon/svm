@@ -7,9 +7,9 @@ if(process.argv.length != 3) {
 
 let payloadbuf = fs.readFileSync(process.argv[2]);
 
-let bootPayload = [...payloadbuf];
+bootPayload = [...payloadbuf];
 
-let globalVariables = {};
+globalVariables = {};
 
 class Context {
 	constructor(global, payload, registers, variables) {
@@ -27,6 +27,9 @@ class Context {
 		this.variables = variables || {};
 	}
 }
+global.Context = Context;
+
+let globalContext = new Context(global, bootPayload, null, globalVariables);
 
 function decode(ctx) {
 	let depth = 0;
@@ -407,5 +410,6 @@ function runContext(ctx) {
 		ins(ctx);
 	}
 }
+global.runContext = runContext;
 
-runContext(new Context(global, bootPayload, null, globalVariables));
+runContext(globalContext);

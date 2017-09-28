@@ -34,9 +34,16 @@ for(let i = 0; i < 126; i++) {
 let variables = {};
 
 function ins(ins) {
-	asm += ins + ' ' + Array.from(arguments).slice(1).filter(v => {
+	let args = Array.from(arguments).slice(1).filter(v => {
 		return v.toString().trim().length > 0;
-	}).join(' ') + '\n';
+	});
+	args.forEach(v => {
+		if(typeof v == 'string') {
+			if(!v.startsWith(':') && !v.startsWith('\'') && !v.endsWith('\'') && !v.startsWith('r')) throw 'Invalid String: ' + v;
+			if(v.startsWith('r') && isNaN(parseInt(v.substring(1), 10))) throw 'Invalid register: ' + v;
+		}
+	});
+	asm += ins + ' ' + args.join(' ') + '\n';
 }
 
 function reg(reg) {
@@ -381,18 +388,18 @@ function handleNode(child) {
 			}
 			let name = child.id == null || child.id.name == null ? "anon_" + branchCounter++ : child.id.name;
 			r = requestRegister();
-			//ins('obj', reg(r));
-			ins('global', reg(r));
+			r2 = requestRegister();
+			ins('global', reg(r2));
 			r1 = requestRegister();
-			ins('getprop', reg(r), str('Function'), reg(r1));
-			refreshRegister(r);
-			ins('call_1', reg(r1), reg(r1), str(``), reg(r));
+			ins('getprop', reg(r2), str('Function'), reg(r1));
+			//let isNew = arguments.callee.prototype == this.__proto__;
+			ins('call_1', reg(r2), reg(r1), str('let localContext = new Context(global, bootPayload, null, globalVariables);for(let i = 0; i < arguments.length; i++){localContext.registers[i] = arguments[i]}localContext.registers[124] = [{t: this, e: localContext.registers, r: -1, h: 0}];localContext.registers[125] = arguments.callee.func;runContext(localContext);return localContext.registers[123];'), reg(r));
 			refreshRegister(r1);
 			ins('add', str('class_'), ':func_' + name, reg(r1));
 			ins('setvar', reg(r1), reg(r));
 			refreshRegister(r1);
 			ins('setprop', reg(r), str('func'), ':func_' + name);
-			r2 = requestRegister();
+			refreshRegister(r2);
 			ins('obj', reg(r2));
 			ins('setprop', reg(r2), str('func'), ':funccall_' + name);
 			ins('setprop', reg(r), str('call'), reg(r2));
@@ -406,8 +413,8 @@ function handleNode(child) {
 			ins('setprop', reg(r), str('prototype'), reg(r1));
 			ins('setprop', reg(r1), str('constructor'), ':func_' + name);
 			freeRegister(r1);
-			freeRegister(r);
-			ins('jmp', ':funcend_' + name)
+			let rr = r;
+			ins('jmp', ':funcend_' + name);
 			functionMap.push(name);
 			let oldArgMap = argMap;
 			let oldVarMap = varMap;
@@ -494,9 +501,12 @@ function handleNode(child) {
 			tryStack = tryStackStack.pop();
 			registers = regStack.pop();
 			asm += '//popreg\n';
+			r = rr;
 			ins(':funcend_' + name);
 			if(child.type == 'FunctionExpression' || child.type == 'ArrowFunctionExpression') {
-				child.register = ':func_' + name;
+				child.register = r;
+			}else{
+				freeRegister(r);
 			}
 		break;
 		case 'VariableDeclaration': 
@@ -518,7 +528,7 @@ function handleNode(child) {
 			//TODO
 		break;
 		case 'Super': 
-			//TODO ES6
+			//TODO
 		break;
 		case 'Import': 
 			//TODO ES6
@@ -573,23 +583,11 @@ function handleNode(child) {
 					freeRegister(ex);
 				}else if(e.type == "ObjectMethod") {
 					if(e.kind == "method") {
-						let f = handleExpression({type: 'FunctionExpression', id: null, params: e.params, body: e.body});
-						r1 = requestRegister();
-						ins('add', str('class_'), reg(f), reg(r1));
-						freeRegister(f);
-						r2 = requestRegister();
-						ins('getvar', reg(r1), reg(r2));
-						freeRegister(r1);
+						r2 = handleExpression({type: 'FunctionExpression', id: null, params: e.params, body: e.body});
 						ins('setprop', reg(r), str(e.id), reg(r2));
 						freeRegister(r2);
 					}else{
-						let f = handleExpression({type: 'FunctionExpression', id: null, params: e.params, body: e.body});
-						r1 = requestRegister();
-						ins('add', str('class_'), reg(f), reg(r1));
-						freeRegister(f);
-						r5 = requestRegister();
-						ins('getvar', reg(r1), reg(r5));
-						freeRegister(r1);
+						r5 = handleExpression({type: 'FunctionExpression', id: null, params: e.params, body: e.body});
 						let i = branchCounter++;
 						r1 = requestRegister();
 						ins('global', reg(r1));
@@ -794,7 +792,7 @@ function handleNode(child) {
 				e = handleExpression(child.left.object);
 				if(child.computed) {
 					let v = handleExpression(child.left.property);
-					ins('setprop', reg(e), reg(v), reg(r))
+					ins('setprop', reg(e), reg(v), reg(r));
 					freeRegister(v);
 				}else{
 					ins('setprop', reg(e), str(child.left.property.name), reg(r));
@@ -836,7 +834,8 @@ function handleNode(child) {
 			freeRegister(o);
 		break;
 		case 'BindExpression':
-			//??
+			//apparenly babel already parses this
+			//https://github.com/tc39/proposal-bind-operator
 		break;
 		case 'ConditionalExpression':
 			i = branchCounter++;
@@ -860,7 +859,26 @@ function handleNode(child) {
 			let args = child.arguments.map(v => {
 				return reg(handleExpression(v));
 			});
-			e = handleExpression(child.callee);
+			let t = child.register;
+			if(child.type == 'CallExpression') {
+				if(child.callee.type == 'MemberExpression') {
+					t = handleExpression(child.callee.object);
+					e = requestRegister();
+					if(child.callee.computed) {
+						let v = handleExpression(child.callee.property);
+						ins('getprop', reg(t), reg(v), reg(e))
+						freeRegister(v);
+					}else{
+						ins('getprop', reg(t), str(child.callee.property.name), reg(e));
+					}
+				}else {
+					e = handleExpression(child.callee);
+					t = requestRegister();
+					ins('global', reg(t));
+				}
+			}else{
+				e = handleExpression(child.callee);
+			}
 			r = requestRegister();
 			if(child.type == 'NewExpression') {
 				ins('obj', reg(child.register));
@@ -869,20 +887,19 @@ function handleNode(child) {
 				refreshRegister(r);
 			}
 			i = branchCounter++;
-			ins('typeof', reg(e), reg(r));
+			ins('getprop', reg(e), str('func'), reg(r));
 			r1 = requestRegister();
-			ins('eq', reg(r), str('function'), reg(r1));
+			r2 = requestRegister();
+			ins('undefined', reg(r2));
+			ins('eq_typed', reg(r), reg(r2), reg(r1));
+			refreshRegister(r);
+			freeRegister(r2);
 			ins('jnz', reg(r1), ':ffi_' + i);
 			refreshRegister(r1);
 			ins('obj', reg(r1));
 			ins('setprop', reg(r1), str('r'), ':call_' + i);
-			if(child.type != 'NewExpression') {
-				refreshRegister(r);
-				ins('global', reg(r));
-			}
-			ins('setprop', reg(r1), str('t'), (child.type == 'NewExpression' ? reg(child.register) : reg(r)));
+			ins('setprop', reg(r1), str('t'), reg(t));
 			ins('setprop', reg(r1), str('h'), 0);
-			refreshRegister(r);
 			ins('context', reg(r));
 			r2 = requestRegister();
 			ins('getprop', reg(r), str('registers'), reg(r2));
@@ -925,7 +942,7 @@ function handleNode(child) {
 			if(child.type == 'NewExpression') {
 				r2 = requestRegister();
 				ins('neq', reg(r), 0, reg(r2));
-				ins('jnz', reg(r2), ':pcall3_' + i);
+				ins('jz', reg(r2), ':pcall3_' + i);
 				freeRegister(r2);
 				ins('mov', reg(r), reg(child.register));
 				ins(':pcall3_' + i);
@@ -934,11 +951,11 @@ function handleNode(child) {
 			ins('jmp', ':fffi_' + i);
 			ins(':ffi_' + i);
 			if(child.type == 'NewExpression') r = requestRegister();
-			ins('call_' + child.arguments.length, (child.type == 'NewExpression' ? reg(child.register) : reg(e)), reg(e), args.join(' '), (child.type == 'NewExpression' ? reg(r) : reg(child.register)));
+			ins('call_' + child.arguments.length, reg(t), reg(e), args.join(' '), (child.type == 'NewExpression' ? reg(r) : reg(child.register)));
 			if(child.type == 'NewExpression') {
 				r2 = requestRegister();
 				ins('neq', reg(r), 0, reg(r2));
-				ins('jnz', reg(r2), ':pcall2_' + i);
+				ins('jz', reg(r2), ':pcall2_' + i);
 				freeRegister(r2);
 				ins('mov', reg(r), reg(child.register));
 				ins(':pcall2_' + i);
@@ -959,7 +976,7 @@ function handleNode(child) {
 			child.register = r;
 		break;
 		case 'DoExpression':
-		//TODO
+			//TODO
 		break;
 	}
 }
