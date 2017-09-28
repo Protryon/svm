@@ -65,6 +65,9 @@ function allocRegister(r) {
 }
 
 function freeRegister(r) {
+	if(activeRegisters[r] == null) {
+		throw "Double free";
+	}
 	if(--activeRegisters[r].ct == 0) {
 		Object.keys(registerRules).forEach(v => {
 			registerRules[v].f(r);

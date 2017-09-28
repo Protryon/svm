@@ -108,7 +108,7 @@ let argMap = [];
 let functionMap = [];
 
 function handleNode(child) {
-	let i, e, r, r1, r2, r3, r4, r5;
+	let i, e, r, r1, r2, r3, r4, r5, r6;
 	switch(child.type) {
 		case 'Identifier':
 			if(child.name in varMap) {
@@ -381,8 +381,13 @@ function handleNode(child) {
 			}
 			let name = child.id == null || child.id.name == null ? "anon_" + branchCounter++ : child.id.name;
 			r = requestRegister();
-			ins('obj', reg(r));
+			//ins('obj', reg(r));
+			ins('global', reg(r));
 			r1 = requestRegister();
+			ins('getprop', reg(r), str('Function'), reg(r1));
+			refreshRegister(r);
+			ins('call_1', reg(r1), reg(r1), str(``), reg(r));
+			refreshRegister(r1);
 			ins('add', str('class_'), ':func_' + name, reg(r1));
 			ins('setvar', reg(r1), reg(r));
 			refreshRegister(r1);
@@ -559,30 +564,68 @@ function handleNode(child) {
 			r = requestRegister();
 			ins('obj', reg(r));
 			for(e of child.properties) {
+				let v = e.computed ? reg(handleExpression(e.key)) : str(e.key.name);
 				if(e.type == "SpreadElement") {
 					//TODO
 				}else if(e.type == "ObjectProperty") {
 					let ex = handleExpression(e.value);
-					ins('setprop', reg(r), str(e.key.name), reg(ex));
+					ins('setprop', reg(r), v, reg(ex));
 					freeRegister(ex);
 				}else if(e.type == "ObjectMethod") {
 					if(e.kind == "method") {
-						//TODO
+						let f = handleExpression({type: 'FunctionExpression', id: null, params: e.params, body: e.body});
+						r1 = requestRegister();
+						ins('add', str('class_'), reg(f), reg(r1));
+						freeRegister(f);
+						r2 = requestRegister();
+						ins('getvar', reg(r1), reg(r2));
+						freeRegister(r1);
+						ins('setprop', reg(r), str(e.id), reg(r2));
+						freeRegister(r2);
 					}else{
-						/*let i = branchCounter++;
-						let r2 = requestRegister();
-						let r3 = requestRegister();
-						ins('global', reg(r2));
-						ins('getprop', reg(r2), 'Object', reg(r2));
-						ins('getprop', reg(r2), 'getOwnPropertyDescriptor', reg(r3));
-						ins('getprop', reg(r2), 'defineProperty', reg(r2));
-						ins('call_2', reg(r3), reg(r3), reg(r), str(e.key), reg(r3));
-						ins('jz', reg(r3), ':om_' + i);
-						ins('call_3')
+						let f = handleExpression({type: 'FunctionExpression', id: null, params: e.params, body: e.body});
+						r1 = requestRegister();
+						ins('add', str('class_'), reg(f), reg(r1));
+						freeRegister(f);
+						r5 = requestRegister();
+						ins('getvar', reg(r1), reg(r5));
+						freeRegister(r1);
+						let i = branchCounter++;
+						r1 = requestRegister();
+						ins('global', reg(r1));
+						r2 = requestRegister();
+						ins('getprop', reg(r1), str('Object'), reg(r2));
+						refreshRegister(r1);
+						r3 = requestRegister();
+						ins('getprop', reg(r2), str('getOwnPropertyDescriptor'), reg(r3));
+						r4 = requestRegister();
+						ins('getprop', reg(r2), str('defineProperty'), reg(r4));
+						refreshRegister(r2);
+						ins('call_2', reg(r3), reg(r3), reg(r), v, reg(r2));
+						freeRegister(r3);
+						ins('jz', reg(r2), ':om_' + i);
+						ins('setprop', reg(r2), str(e.kind), reg(r5));
+						ins('delete', reg(r2), str('value'));
+						ins('call_3', reg(r4), reg(r4), reg(r), v, reg(r2), reg(r1));
+						ins('jmp', ':om2_' + i);
 						ins(':om_' + i);
-						freeRegister(r2);*/
-						//TODO
+						refreshRegister(r2);
+						ins('obj', reg(r2));
+						ins('setprop', reg(r2), str(e.kind), reg(r5));
+						r6 = requestRegister();
+						ins('true', reg(r6));
+						ins('setprop', reg(r2), str('configurable'), reg(r6));
+						freeRegister(r6);
+						ins('call_3', reg(r4), reg(r4), reg(r), v, reg(r2), reg(r1));
+						ins(':om2_' + i);
+						freeRegister(r1);
+						freeRegister(r2);
+						freeRegister(r4);
+						freeRegister(r5);
 					}
+				}
+				if(e.computed) {
+					freeRegister(v);
 				}
 			}
 			child.register = r;

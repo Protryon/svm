@@ -9,6 +9,8 @@ let payloadbuf = fs.readFileSync(process.argv[2]);
 
 let bootPayload = [...payloadbuf];
 
+let globalVariables = {};
+
 class Context {
 	constructor(global, payload, registers, variables) {
 		this.global = global;
@@ -311,7 +313,9 @@ let instructions = [
 	//comparison
 	//eq
 	function(ctx) {
-		writeArg(ctx, readArg(ctx) == readArg(ctx));
+		let a1 = readArg(ctx);
+		let a2 = readArg(ctx);
+		writeArg(ctx, a1 == a2 || ((a1 == undefined || a2 == undefined) && (a1 == 0 || a2 == 0)));
 	},
 	//eq_typed
 	function(ctx) {
@@ -319,7 +323,9 @@ let instructions = [
 	},
 	//neq
 	function(ctx) {
-		writeArg(ctx, readArg(ctx) != readArg(ctx));
+		let a1 = readArg(ctx);
+		let a2 = readArg(ctx);
+		writeArg(ctx, a1 != a2 && !((a1 == undefined || a2 == undefined) && (a1 == 0 || a2 == 0)));
 	},
 	//neq_typed
 	function(ctx) {
@@ -349,7 +355,8 @@ let instructions = [
 	},
 	//jz
 	function(ctx) {
-		if(readArg(ctx) == 0) {
+		let a = readArg(ctx);
+		if(a == 0 || a == undefined) {
 			ctx.registers[125] = readArg(ctx);
 		}else{
 			readArg(ctx);
@@ -357,7 +364,8 @@ let instructions = [
 	},
 	//jnz
 	function(ctx) {
-		if(readArg(ctx) != 0) {
+		let a = readArg(ctx);
+		if(a != 0 && a != undefined) {
 			ctx.registers[125] = readArg(ctx);
 		}else{
 			readArg(ctx);
@@ -400,4 +408,4 @@ function runContext(ctx) {
 	}
 }
 
-runContext(new Context(global, bootPayload));
+runContext(new Context(global, bootPayload, null, globalVariables));

@@ -12,11 +12,20 @@ Run `./run.sh` with the repository directory as your current working directory.
 ## Planned Features
 
 ### Functionality
-* Complete native ES6 support without Babel
+* ES6 Class implementation
+* Decorators
+* Directives
+* 'super' keyword
+* Internal async functions
 * Outward FFI (calling functions inside the VM from outside)
+* Spread elements
+* Do expressions
+* Templates
+* Modules, imports, exports
 * With statements
 * Catch external exceptions internally
 * Client builder
+* Bundling and browserification
 
 ### Obfuscation
 * Instruction repackaging, shuffling, modification/generation
