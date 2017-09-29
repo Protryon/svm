@@ -11,7 +11,6 @@ let asm = '';
 let script = fs.readFileSync(process.argv[2], 'utf8');
 
 let xf = babel.transform(script, {babelrc: false, sourceType: 'script', plugins: [
-	'transform-es2015-classes',
 	'transform-es2015-computed-properties',
 	'transform-es2015-destructuring',
 	'transform-es2015-duplicate-keys',
@@ -37,13 +36,13 @@ function ins(ins) {
 	let args = Array.from(arguments).slice(1).filter(v => {
 		return v.toString().trim().length > 0;
 	});
+	asm += ins + ' ' + args.join(' ') + '\n';
 	args.forEach(v => {
 		if(typeof v == 'string') {
 			if(!v.startsWith(':') && !v.startsWith('\'') && !v.endsWith('\'') && !v.startsWith('r')) throw 'Invalid String: ' + v;
 			if(v.startsWith('r') && isNaN(parseInt(v.substring(1), 10))) throw 'Invalid register: ' + v;
 		}
 	});
-	asm += ins + ' ' + args.join(' ') + '\n';
 }
 
 function reg(reg) {
@@ -84,7 +83,7 @@ function refreshRegister(r) {
 }
 
 function str(arg) {
-	return '\'' + arg + '\'';
+	return '\'' + arg.toString().replace(/'/g, '\\\'') + '\'';
 }
 
 function handleExpression(exp) {
@@ -98,8 +97,13 @@ function handleExpression(exp) {
 	handleNode(exp);
 	if('register' in exp) {
 		return exp.register;
-	}else if ('registers' in exp && exp.registers.length > 0) {
-		return exp.registers[0];
+	}
+	return undefined;
+}
+
+Object.prototype.findChild = function(func) {
+	for(let key in this) {
+		if(func(key, this[key])) return key;
 	}
 	return undefined;
 }
@@ -112,24 +116,24 @@ let regStack = [];
 let tryStack = [];
 let tryStackStack = [];
 let argMap = [];
-let functionMap = [];
+let functionMap = {};
 
 function handleNode(child) {
 	let i, e, r, r1, r2, r3, r4, r5, r6;
 	switch(child.type) {
 		case 'Identifier':
 			if(child.name in varMap) {
-				child.register = varMap[child.name];
-				claimRegister(child.register);
+				child.register = requestRegister();
+				ins('getvar', str(varMap[child.name]), reg(child.register));
 			}else if(argMap.includes(child.name)) {
 				child.register = argMap.indexOf(child.name);
 				claimRegister(child.register);
-			}else if(functionMap.includes(child.name)) {
+			/*}else if(child.name in functionMap) {
 				child.register = requestRegister();
 				r = requestRegister();
-				ins('add', str('class_'), ':func_' + child.name, reg(r));
+				ins('add', str('class_'), ':func_' + functionMap[child.name] + '_' + child.name, reg(r));
 				ins('getvar', reg(r), reg(child.register));
-				freeRegister(r);
+				freeRegister(r);*/
 			}else{
 				child.register = requestRegister();
 				ins('global', reg(child.register));
@@ -280,7 +284,7 @@ function handleNode(child) {
 				handleNode({type: 'ReturnStatement', argument: e});
 				freeRegister(e);
 			}else{
-				ins('mov', reg(e), reg(123));
+				ins('setvar', str('tryv'), reg(e));
 				freeRegister(e);
 				ins('jmp', ':' + tr.handler);
 			}
@@ -295,7 +299,7 @@ function handleNode(child) {
 				ins('jmp', ':tryfinish_' + i);
 				ins(':trycatch_' + i);
 				if(child.handler.param != null) {
-					varMap[child.handler.param.name] = 123;
+					varMap[child.handler.param.name] = 'tryv';
 				}
 				handleNode(child.handler.body);
 				if(child.handler.param != null) {
@@ -386,41 +390,74 @@ function handleNode(child) {
 			if(child.type == 'FunctionDeclaration' && child.id == null) {
 				throw "Unexpected unnamed function: exports not supported";
 			}
+			i = branchCounter++;
 			let name = child.id == null || child.id.name == null ? "anon_" + branchCounter++ : child.id.name;
 			r = requestRegister();
 			r2 = requestRegister();
 			ins('global', reg(r2));
 			r1 = requestRegister();
 			ins('getprop', reg(r2), str('Function'), reg(r1));
-			//let isNew = arguments.callee.prototype == this.__proto__;
+			//TODO: make sure GVN in the future factors out this huge string!
 			ins('call_1', reg(r2), reg(r1), str('let localContext = new Context(global, bootPayload, null, globalVariables);for(let i = 0; i < arguments.length; i++){localContext.registers[i] = arguments[i]}localContext.registers[124] = [{t: this, e: localContext.registers, r: -1, h: 0}];localContext.registers[125] = arguments.callee.func;runContext(localContext);return localContext.registers[123];'), reg(r));
 			refreshRegister(r1);
-			ins('add', str('class_'), ':func_' + name, reg(r1));
-			ins('setvar', reg(r1), reg(r));
-			refreshRegister(r1);
-			ins('setprop', reg(r), str('func'), ':func_' + name);
-			refreshRegister(r2);
-			ins('obj', reg(r2));
-			ins('setprop', reg(r2), str('func'), ':funccall_' + name);
+			if(child.super != null) {
+				refreshRegister(r2);
+				ins('obj', reg(r1));
+				ins('getprop', reg(child.super), str('prototype'), reg(r2));
+				ins('setprop', reg(r1), str('__proto__'), reg(r2));
+				ins('setprop', reg(r), str('prototype'), reg(r1));
+				refreshRegister(r1);
+				ins('setprop', reg(r), str('__proto__'), reg(child.super));
+			}
+			ins('setvar',  str('ifunc_' + name), reg(r));
+			ins('setprop', reg(r), str('func'), ':func_' + i + '_' + name);
+			//TODO: make call/apply functions so that they can be externally called
+			r3 = requestRegister();
+			ins('global', reg(r3));
+			ins('getprop', reg(r3), str('Function'), reg(r1));
+			ins('call_1', reg(r3), reg(r1), str('let localContext = new Context(global, bootPayload, null, globalVariables);for(let i = 0; i < arguments.length; i++){localContext.registers[i] = arguments[i]}localContext.registers[124] = [{t: this, e: localContext.registers, r: -1, h: 0}];localContext.registers[125] = arguments.callee.func;runContext(localContext);return localContext.registers[123];'), reg(r2));
+			ins('setprop', reg(r2), str('func'), ':funccall_' + i + '_' + name);
 			ins('setprop', reg(r), str('call'), reg(r2));
 			refreshRegister(r2);
-			ins('obj', reg(r2));
-			ins('setprop', reg(r2), str('func'), ':funcapply_' + name);
+			ins('call_1', reg(r3), reg(r1), str('let localContext = new Context(global, bootPayload, null, globalVariables);for(let i = 0; i < arguments.length; i++){localContext.registers[i] = arguments[i]}localContext.registers[124] = [{t: this, e: localContext.registers, r: -1, h: 0}];localContext.registers[125] = arguments.callee.func;runContext(localContext);return localContext.registers[123];'), reg(r2));
+			freeRegister(r3);
+			ins('setprop', reg(r2), str('func'), ':funcapply_' + i + '_' + name);
 			ins('setprop', reg(r), str('apply'), reg(r2));
-			//TODO: function.bind?
+			//TODO: function.bind
+			//TODO: function.toString/function.toSource
 			freeRegister(r2);
-			ins('obj', reg(r1));
-			ins('setprop', reg(r), str('prototype'), reg(r1));
-			ins('setprop', reg(r1), str('constructor'), ':func_' + name);
+			refreshRegister(r1);
+
+			if(child.super != null) {
+				ins('getprop', reg(r), str('prototype'), reg(r1));
+			}else{
+				ins('obj', reg(r1));
+				ins('setprop', reg(r), str('prototype'), reg(r1));
+			}
+			ins('setprop', reg(r1), str('constructor'), reg(r));
 			freeRegister(r1);
+			if(child.type == 'FunctionExpression' || child.type == 'ArrowFunctionExpression') {
+				child.register = r;
+				if(child.varName != null) {
+					debugger;
+					varMap[child.varName] = child.varValue;
+					ins('setvar', str(child.varValue), reg(r))
+				}
+			}else{
+				freeRegister(r);
+			}
 			let rr = r;
-			ins('jmp', ':funcend_' + name);
-			functionMap.push(name);
+			ins('jmp', ':funcend_' + i + '_' + name);
+			functionMap[name] = i;
+			varMap[name] = 'ifunc_' + name;
 			let oldArgMap = argMap;
 			let oldVarMap = varMap;
 			tryStackStack.push(tryStack);
 			tryStack = [];
 			varMap = {};
+			for(let key in oldVarMap) {
+				varMap[key] = oldVarMap[key];
+			}
 			regStack.push(registers);
 			asm += '//pushreg\n';
 			let rss = regStack.length;
@@ -434,7 +471,7 @@ function handleNode(child) {
 			argMap = child.params.map(v => {
 				return v.name;
 			});
-			ins(':funcapply_' + name);
+			ins(':funcapply_' + i + '_' + name);
 			if(argMap.length == 0) {
 				requestRegister();
 				requestRegister();
@@ -459,8 +496,8 @@ function handleNode(child) {
 			}else if(argMap.length == 1) {
 				freeRegister(1);
 			}
-			ins('jmp', ':func_' + name);
-			ins(':funccall_' + name);
+			ins('jmp', ':func_' + i + '_' + name);
+			ins(':funccall_' + i + '_' + name);
 			requestRegister(); // makes up for argument lost
 			r = requestRegister();
 			ins('getprop', reg(124), str('length'), reg(r));
@@ -475,7 +512,7 @@ function handleNode(child) {
 				ins('mov', reg(i), reg(i - 1));
 			}
 			freeRegister(argMap.length);
-			ins(':func_' + name);
+			ins(':func_' + i + '_' + name);
 			if(child.type == 'ArrowFunctionExpression' && child.expression) {
 				handleNode({type: 'ReturnStatement', argument: child.body});
 			}else handleNode(child.body);
@@ -501,21 +538,23 @@ function handleNode(child) {
 			tryStack = tryStackStack.pop();
 			registers = regStack.pop();
 			asm += '//popreg\n';
-			r = rr;
-			ins(':funcend_' + name);
-			if(child.type == 'FunctionExpression' || child.type == 'ArrowFunctionExpression') {
-				child.register = r;
-			}else{
-				freeRegister(r);
-			}
+			ins(':funcend_' + i + '_' + name);
 		break;
 		case 'VariableDeclaration': 
-			child.registers = [];
 			//TODO: var/let/const spec impl?
 			for(let decl of child.declarations) {
-				r = decl.init != null ? handleExpression(decl.init) : requestRegister();
-				child.registers.push(r);
-				varMap[decl.id.name] = r;
+				i = branchCounter++;
+				if(decl.init == null) {
+					r = requestRegister();
+				}else{
+					decl.init.varName = decl.id.name;
+					decl.init.varValue = 'v_' + i;
+					if(decl.id.name == 'c2') debugger;
+					r = handleExpression(decl.init);
+				}
+				child.register = child.register || r;
+				ins('setvar', str('v_' + i), reg(r));
+				varMap[decl.id.name] = 'v_' + i;
 			}
 		break;
 		case 'Decorator': 
@@ -528,10 +567,21 @@ function handleNode(child) {
 			//TODO
 		break;
 		case 'Super': 
-			//TODO
+			r = requestRegister();
+			ins('getprop', reg(124), str('length'), reg(r));
+			r1 = requestRegister();
+			ins('sub', reg(r), 1, reg(r1));
+			refreshRegister(r);
+			ins('getprop', reg(124), reg(r1), reg(r));
+			refreshRegister(r1);
+			ins('getprop', reg(r), str('f'), reg(r1));
+			refreshRegister(r);
+			ins('getprop', reg(r1), str('__proto__'), reg(r));
+			child.register = r;
+			freeRegister(r1);
 		break;
 		case 'Import': 
-			//TODO ES6
+			//TODO
 		break;
 		case 'ThisExpression': 
 			r = requestRegister();
@@ -541,15 +591,15 @@ function handleNode(child) {
 			refreshRegister(r);
 			ins('getprop', reg(124), reg(r1), reg(r));
 			refreshRegister(r1);
-			ins('getprop', reg(r), str('t'), reg(r1))
+			ins('getprop', reg(r), str('t'), reg(r1));
 			child.register = r1;
 			freeRegister(r);
 		break;
 		case 'YieldExpression': 
-			//TODO ES6
+			//TODO
 		break;
 		case 'AwaitExpression': 
-			//TODO ES6
+			//TODO
 		break;
 		case 'ArrayExpression': 
 			r = requestRegister();
@@ -802,22 +852,22 @@ function handleNode(child) {
 			freeRegister(r1);
 		break;
 		case 'LogicalExpression':
+			//correctly transferring semantics requires we not use the or/and instructions here because it will require precomputing the child.right expression
 			i = branchCounter++;
-			r = handleExpression(child.left);
-			child.register = requestRegister();
-			ins('neq', reg(r), 0, reg(child.register));
-			freeRegister(r);
+			child.register = handleExpression(child.left);
+			r1 = requestRegister();
+			ins('neq', reg(child.register), 0, reg(r1));
 			if(child.operator == '||') {
-				ins('jnz', reg(child.register), ':log_' + i);
+				ins('jnz', reg(r1), ':log_' + i);
+				freeRegister(child.register);
 				e = handleExpression(child.right);
-				ins('mov', reg(e), reg(child.register));
-				freeRegister(e);
+				child.register = e;
 				ins(':log_' + i);
 			}else if(child.operator == '&&') {
-				ins('jz', reg(child.register), ':log_' + i);
+				ins('jz', reg(r1), ':log_' + i);
+				freeRegister(child.register);
 				e = handleExpression(child.right);
-				ins('mov', reg(e), reg(child.register));
-				freeRegister(e);
+				child.register = e;
 				ins(':log_' + i);
 			}
 		break;
@@ -861,6 +911,7 @@ function handleNode(child) {
 			});
 			let t = child.register;
 			if(child.type == 'CallExpression') {
+				// maybe we should export these values from the real AST handlers rather than copy/modify
 				if(child.callee.type == 'MemberExpression') {
 					t = handleExpression(child.callee.object);
 					e = requestRegister();
@@ -871,12 +922,26 @@ function handleNode(child) {
 					}else{
 						ins('getprop', reg(t), str(child.callee.property.name), reg(e));
 					}
+					if(child.callee.object.type == 'Super') {
+						//TODO: theoretically there could be a long chain after super, and that isnt handled
+						freeRegister(t);
+						t = handleExpression({type: 'ThisExpression'});
+					}
+				}else if(child.callee.type == 'Super') {
+					t = handleExpression({type: 'ThisExpression'});
+					child.callee.varName = child.varName;
+					child.callee.varValue = child.varValue;
+					e = handleExpression(child.callee);
 				}else {
+					child.callee.varName = child.varName;
+					child.callee.varValue = child.varValue;
 					e = handleExpression(child.callee);
 					t = requestRegister();
 					ins('global', reg(t));
 				}
 			}else{
+				child.callee.varName = child.varName;
+				child.callee.varValue = child.varValue;
 				e = handleExpression(child.callee);
 			}
 			r = requestRegister();
@@ -900,6 +965,7 @@ function handleNode(child) {
 			ins('setprop', reg(r1), str('r'), ':call_' + i);
 			ins('setprop', reg(r1), str('t'), reg(t));
 			ins('setprop', reg(r1), str('h'), 0);
+			ins('setprop', reg(r1), str('f'), reg(e));
 			ins('context', reg(r));
 			r2 = requestRegister();
 			ins('getprop', reg(r), str('registers'), reg(r2));
@@ -975,6 +1041,67 @@ function handleNode(child) {
 			}
 			child.register = r;
 		break;
+		case 'ClassDeclaration':
+		case 'ClassExpression':
+			let constr = child.body.body[child.body.body.findChild((key, v) => {
+				return v.type == 'ClassMethod' && v.kind == 'constructor';
+			})];
+			i = branchCounter++;
+			if(child.id == null) {
+				child.id = {name: 'anonclass_' + i};
+			}
+			//TODO: add new enforcement?
+			e = undefined;
+			if(child.superClass != null) {
+				e = handleExpression(child.superClass);
+			}
+			r = handleExpression({type: 'FunctionExpression', params: constr.params, body: constr.body, super: e});
+			if(child.superClass != null) {
+				freeRegister(e);
+			}
+			varMap[child.id.name] = 'iclass_' + child.id.name;
+			ins('setvar', str('iclass_' + child.id.name), reg(r));
+			child.body.body.forEach(v => {
+				if(v.type == 'ClassMethod' || v.type == 'ClassPrivateMethod') {
+					if(v.kind == 'constructor') return;
+					let k;
+					if(v.type == 'ClassMethod') {
+						k = v.computed ? reg(handleExpression(v.key)) : str(v.key.name);
+					}else{
+						k = str(v.key.id.name);
+					}
+					r1 = handleExpression({type: 'FunctionExpression', params: v.params, body: v.body});
+					if(v['static']) {
+						ins('setprop', reg(r), k, reg(r1));
+					}else{
+						r2 = requestRegister();
+						ins('getprop', reg(r), str('prototype'), reg(r2));
+						ins('setprop', reg(r2), k, reg(r1));
+						freeRegister(r2);
+					}
+					freeRegister(r1);
+					if(v.type == 'ClassMethod' && v.computed) freeRegister(k);
+				}else if (v.type == 'ClassProperty' || v.type == 'ClassPrivateProperty') { // babel implements this in AST, but doesnt seem to parse them
+					let k;
+					if(v.type == 'ClassProperty') {
+						k = v.computed ? reg(handleExpression(v.key)) : str(v.key.name);
+					}else{
+						k = str(v.key.id.name);
+					}
+					r1 = handleExpression(v.value);
+					if(v['static']) {
+						ins('setprop', reg(r), k, reg(r1));
+					}else{
+						r2 = requestRegister();
+						ins('getprop', reg(r), str('prototype'), reg(r2));
+						ins('setprop', reg(r2), k, reg(r1));
+						freeRegister(r2);
+					}
+					freeRegister(r1);
+					if(v.type == 'ClassMethod' && v.computed) freeRegister(k);
+				}
+			});
+		break;
 		case 'DoExpression':
 			//TODO
 		break;
@@ -983,11 +1110,21 @@ function handleNode(child) {
 
 function recurseNode(node) {
 	for(let child of node) {
-		handleNode(child);
+		if(child.type == 'FunctionDeclaration') {
+			handleNode(child);
+		}
+	}
+	for(let child of node) {
+		if(child.type != 'FunctionDeclaration') {
+			handleNode(child);
+		}
 	}
 }
-
-recurseNode(xf.body);
+try{
+	recurseNode(xf.body);
+}catch(e) {
+	console.log(e);
+}
 ins(':eof');
 
 fs.writeFileSync(process.argv[3], asm);

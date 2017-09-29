@@ -1,7 +1,7 @@
 const fs = require('fs');
 
-if(process.argv.length != 4) {
-	console.log('Usage: node index.js <input.sasm> <output.sobj>');
+if(process.argv.length != 5) {
+	console.log('Usage: node index.js <input.sasm> <output.sobj> <output.smap>');
 	return;
 }
 
@@ -95,7 +95,7 @@ let instructions = [
 	new Instruction('dump', []),
 ]
 
-String.prototype.splitC = function(delim, seqs) {
+String.prototype.splitC = function(delim, seqs, removeEscapes) {
 	let seqse = seqs.map(v => {
 		return false;
 	});
@@ -116,8 +116,10 @@ String.prototype.splitC = function(delim, seqs) {
 		if(c == '\\') {
 			escaped = !escaped;
 			if(escaped) {
-				sub = sub.substring(0, i - 1) + sub.substring(i);
-				i--;
+				if(removeEscapes) {
+					sub = sub.substring(0, i) + sub.substring(i + 1);
+					i--;
+				}
 				continue;
 			}
 		}
@@ -128,6 +130,7 @@ String.prototype.splitC = function(delim, seqs) {
 			sub = sub.substring(i + delim.length);
 			i = -1;
 		}
+		escaped = false;
 	}
 	ret.push(sub);
 	return ret;
@@ -136,7 +139,8 @@ String.prototype.splitC = function(delim, seqs) {
 function assemble(asm) {
 	let labels = {};
 	let out = [];
-	let lines = asm.splitC('\n', ['\'', '"', '`']);
+	let instructionMap = [];
+	let lines = asm.splitC('\n', ['\'', '"', '`'], false);
 	let delayedLabels = [];
 	lines.map(v => {
 		let vi = v.indexOf('//');
@@ -146,7 +150,8 @@ function assemble(asm) {
 		return v;
 	}).forEach((line, lino) => {
 		if(line.trim().length == 0) return;
-		let args = line.trim().splitC(' ', ['\'', '"', '`']).filter(v => {
+		instructionMap.push({i: out.length, ins: line});
+		let args = line.trim().splitC(' ', ['\'', '"', '`'], true).filter(v => {
 			return v.trim().length > 0;
 		});
 		if(args.length == 1 && args[0].startsWith(':') && !args[0].includes(' ')) {
@@ -167,6 +172,7 @@ function assemble(asm) {
 			return;
 		}
 		if(ins.args.length != args.length - 1) {
+			debugger;
 			console.log(`Line ${lino + 1}: Mismatched instruction arguments`);
 			return;
 		}
@@ -248,7 +254,12 @@ function assemble(asm) {
 		b.push(...buf);
 		out.splice(v.i, 8, ...b);
 	})
-	return out;
+	return {out, instructionMap: instructionMap.map(v => {
+		return v.i + ': ' + v.ins;
+	}).join('\n')};
 }
 
-fs.writeFileSync(process.argv[3], new Uint8Array(assemble(asm)));
+let assembled = assemble(asm);
+
+fs.writeFileSync(process.argv[3], new Uint8Array(assembled.out));
+fs.writeFileSync(process.argv[4], assembled.instructionMap);

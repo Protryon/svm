@@ -21,7 +21,7 @@ class Context {
 				this.registers[i] = undefined;
 			}
 			this.registers[123] = undefined;
-			this.registers[124] = [{h: 0, t: global}];
+			this.registers[124] = [{h: 0, t: global, f: null}];
 			this.registers[125] = 0;
 		}
 		this.variables = variables || {};
@@ -30,6 +30,8 @@ class Context {
 global.Context = Context;
 
 let globalContext = new Context(global, bootPayload, null, globalVariables);
+
+let lastDecodePos = 0;
 
 function decode(ctx) {
 	let depth = 0;
@@ -48,6 +50,7 @@ function decode(ctx) {
 	if(r >= ctx.payload.length || r < 0) {
 		return -1;
 	}
+	lastDecodePos = r;
 	return ctx.payload[r];
 }
 
@@ -84,11 +87,10 @@ function readArg(ctx) {
 	return ctx.registers[b];
 }
 
-let instructionCount = 0;
-
+let lastInstruction = 0;
 function readInstruction(ctx) {
-	instructionCount++;
 	let r = decode(ctx);
+	lastInstruction = lastDecodePos;
 	if(r < 0) return null;
 	if(r >= instructions.length) throw "Invalid instruction, ISN# " + instructionCount;
 	return instructions[r];
@@ -406,8 +408,12 @@ let instructions = [
 
 function runContext(ctx) {
 	let ins = null;
-	while((ins = readInstruction(ctx)) != null) {
-		ins(ctx);
+	try{
+		while((ins = readInstruction(ctx)) != null) {
+			ins(ctx);
+		}
+	}catch(e) {
+		console.log(e.stack, 'LOC: ' + lastInstruction)
 	}
 }
 global.runContext = runContext;

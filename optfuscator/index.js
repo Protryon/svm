@@ -5,7 +5,7 @@ if(process.argv.length != 4) {
 	return;
 }
 
-String.prototype.splitC = function(delim, seqs) {
+String.prototype.splitC = function(delim, seqs, removeEscapes) {
 	let seqse = seqs.map(v => {
 		return false;
 	});
@@ -26,8 +26,10 @@ String.prototype.splitC = function(delim, seqs) {
 		if(c == '\\') {
 			escaped = !escaped;
 			if(escaped) {
-				sub = sub.substring(0, i - 1) + sub.substring(i);
-				i--;
+				if(removeEscapes) {
+					sub = sub.substring(0, i) + sub.substring(i + 1);
+					i--;
+				}
 				continue;
 			}
 		}
@@ -38,6 +40,7 @@ String.prototype.splitC = function(delim, seqs) {
 			sub = sub.substring(i + delim.length);
 			i = -1;
 		}
+		escaped = false;
 	}
 	ret.push(sub);
 	return ret;
@@ -77,7 +80,7 @@ function freeRegister(r) {
 }
 
 function str(arg) {
-	return '\'' + arg + '\'';
+	return '\'' + arg.replace(/'/g, '\\\'') + '\'';
 }
 
 function isstr(arg) {
@@ -89,9 +92,9 @@ function isconst(arg) {
 }
 
 let labels = {};
-let lines = asm.splitC('\n', ['\'', '"', '`']);
+let lines = asm.splitC('\n', ['\'', '"', '`'], false);
 lines = lines.map(line => {
-	return line.trim().splitC(' ', ['\'', '"', '`']).filter(v => {
+	return line.trim().splitC(' ', ['\'', '"', '`'], true).filter(v => {
 		return v.trim().length > 0;
 	});
 });
@@ -262,7 +265,7 @@ let registerRules = {
 		worsens: ['size'],
 		type: 'optimization',
 	},
-	uselessSets: {
+	/*uselessSets: { // TODO: fix loops and such
 		f: function(r) {
 			let ar = activeRegisters[r];
 			let lastGet = -1;
@@ -279,7 +282,7 @@ let registerRules = {
 		improves: ['size', 'speed'],
 		worsens: [],
 		type: 'optimization',
-	}
+	}*/
 	//GVN
 	//register shuffling
 };
@@ -341,5 +344,10 @@ lines = lines.filter(v => {
 
 
 fs.writeFileSync(process.argv[3], lines.map(v => {
-	return v.join(' ');
+	return v.map(v2 => {
+		if(isstr(v2)) {
+			return str(v2.substring(1, v2.length - 1));
+		}
+		return v2;
+	}).join(' ');
 }).join('\n'));

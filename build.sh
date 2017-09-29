@@ -7,5 +7,5 @@ cd optfuscator
 node index.js ../build/out.sasm ../build/optimized.sasm
 cd ..
 cd assembler
-node index.js ../build/optimized.sasm ../build/out.sobj
+node index.js ../build/optimized.sasm ../build/out.sobj ../build/out.smap
 cd ..
