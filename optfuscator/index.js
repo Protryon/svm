@@ -319,7 +319,7 @@ lines.forEach((args, lino) => {
 		args.slice(1).forEach((v, i) => {
 			if(v.startsWith('r')) {
 				let r = parseInt(v.substring(1), 10);
-				if(r > 122) return;
+				if(r < 3) return;
 				let st = ins[i].split('/');
 				for(let sto of st) {
 					if(sto == 'get') {

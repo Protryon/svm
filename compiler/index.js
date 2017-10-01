@@ -46,12 +46,12 @@ function ins(ins) {
 }
 
 function reg(reg) {
-	return typeof reg === 'string' && reg.startsWith(':') ? reg : 'r' + reg;
+	return typeof reg !== 'number' ? reg : 'r' + reg;
 }
 
 function requestRegister() {
-	for(let i = 0; i < 123; i++) {
-		if(registers[i] === 0) {
+	for(let i = 3; i < 65536; i++) {
+		if(registers[i] === undefined || registers[i] === 0) {
 			registers[i] = 1;
 			asm += '//alloc' + i + '\n'
 			return i;
@@ -61,7 +61,8 @@ function requestRegister() {
 }
 
 function claimRegister(r) {
-	if(r >= 123) return;
+	if(r <= 2) return;
+	if(registers[r] === undefined) registers[r] = 0;
 	registers[r]++;
 	asm += '//alloc' + r + '\n';
 }
@@ -71,13 +72,13 @@ function freeRegister(r) {
 		if(r.startsWith('r')) r = parseInt(r.substring(1));
 		else return;
 	}else if(r == null) return;
-	if(r >= 123) return;
+	if(r <= 2) return;
 	asm += '//free' + r + '\n'
 	if(registers[r] > 0) registers[r]--;
 }
 
 function refreshRegister(r) {
-	if(r >= 123) return;
+	if(r <= 2) return;
 	asm += '//free' + r + '\n'
 	asm += '//alloc' + r + '\n'
 }
@@ -88,10 +89,10 @@ function str(arg) {
 
 function handleExpression(exp) {
 	if(typeof exp == 'number') {
-		if(exp < 123) {
+		if(exp > 2) {
 			asm += '//alloc' + exp + '\n'
+			registers[exp]++;
 		}
-		registers[exp]++;
 		return exp;
 	}
 	handleNode(exp);
@@ -145,20 +146,16 @@ function handleNode(child) {
 			ins('regex', str(child.pattern), str(child.flags), reg(child.register));
 		break;
 		case 'NullLiteral': 
-			child.register = requestRegister(r);
-			ins('null', reg(child.register));
+			child.register = 'null';
 		break;
 		case 'StringLiteral': 
-			child.register = requestRegister(r);
-			ins('mov', str(child.value), reg(child.register));
+			child.register = str(child.value);
 		break;
 		case 'BooleanLiteral': 
-			child.register = requestRegister(r);
-			ins(child.value ? 'true' : 'false', reg(child.register));
+			child.register = child.value ? 'true' : 'false'
 		break;
 		case 'NumericLiteral': 
-			child.register = requestRegister(r);
-			ins('mov', child.value, reg(child.register));
+			child.register = child.value;
 		break;
 		case 'WithStatement': 
 			//TODO
@@ -172,26 +169,26 @@ function handleNode(child) {
 		case 'ReturnStatement': 
 			if(child.argument != null) {
 				e = handleExpression(child.argument);
-				ins('mov', reg(e), reg(123));
+				ins('mov', reg(e), reg(2));
 				freeRegister(e);
 			}else{
-				ins('undefined', reg(123));
+				ins('undefined', reg(2));
 			}
 			r = requestRegister();
-			ins('getprop', reg(124), str('pop'), reg(r));
+			ins('getprop', reg(1), str('pop'), reg(r));
 			r1 = requestRegister();
-			ins('call_0', reg(124), reg(r), reg(r1));
+			ins('call_0', reg(1), reg(r), reg(r1));
 			refreshRegister(r);
 			ins('getprop', reg(r1), str('e'), reg(r));
 			if(child.returnLoc == null) {
 				r2 = requestRegister();
 				ins('getprop', reg(r1), str('r'), reg(r2));
-				ins('setprop', reg(r), 125, reg(r2));
+				ins('setprop', reg(r), 0, reg(r2));
 				freeRegister(r2);
 			}else{
-				ins('setprop', reg(r), 125, child.returnLoc);
+				ins('setprop', reg(r), 0, child.returnLoc);
 			}
-			ins('setprop', reg(r), 123, reg(123));
+			ins('setprop', reg(r), 2, reg(2));
 			refreshRegister(r1);
 			ins('context', reg(r1));
 			ins('setprop', reg(r1), str('registers'), reg(r));
@@ -271,13 +268,13 @@ function handleNode(child) {
 			let tr = tryStack.length == 0 ? null : tryStack[tryStack.length - 1];
 			if(tr == null) {
 				r = requestRegister();
-				ins('getprop', reg(124), str('length'), reg(r));
+				ins('getprop', reg(1), str('length'), reg(r));
 				r1 = requestRegister();
 				ins('le', reg(r), 2, reg(r1));
 				ins('jnz', reg(r1), ':eof');
 				ins('sub', reg(r), 2, reg(r));
 				refreshRegister(r1);
-				ins('getprop', reg(124), reg(r), reg(r1));
+				ins('getprop', reg(1), reg(r), reg(r1));
 				freeRegister(r);
 				ins('setprop', reg(r1), str('h'), 1);
 				freeRegister(r1);
@@ -398,7 +395,7 @@ function handleNode(child) {
 			r1 = requestRegister();
 			ins('getprop', reg(r2), str('Function'), reg(r1));
 			//TODO: make sure GVN in the future factors out this huge string!
-			ins('call_1', reg(r2), reg(r1), str('let localContext = new Context(global, bootPayload, null, globalVariables);for(let i = 0; i < arguments.length; i++){localContext.registers[i] = arguments[i]}localContext.registers[124] = [{t: this, e: localContext.registers, r: -1, h: 0}];localContext.registers[125] = arguments.callee.func;runContext(localContext);return localContext.registers[123];'), reg(r));
+			ins('call_1', reg(r2), reg(r1), str('let localContext = new Context(global, bootPayload, null, globalVariables);for(let i = 0; i < arguments.length; i++){localContext.registers[i] = arguments[i]}localContext.registers[1] = [{t: this, e: localContext.registers, r: -1, h: 0}];localContext.registers[0] = arguments.callee.func;runContext(localContext);return localContext.registers[2];'), reg(r));
 			refreshRegister(r1);
 			if(child.super != null) {
 				refreshRegister(r2);
@@ -415,11 +412,11 @@ function handleNode(child) {
 			r3 = requestRegister();
 			ins('global', reg(r3));
 			ins('getprop', reg(r3), str('Function'), reg(r1));
-			ins('call_1', reg(r3), reg(r1), str('let localContext = new Context(global, bootPayload, null, globalVariables);for(let i = 0; i < arguments.length; i++){localContext.registers[i] = arguments[i]}localContext.registers[124] = [{t: this, e: localContext.registers, r: -1, h: 0}];localContext.registers[125] = arguments.callee.func;runContext(localContext);return localContext.registers[123];'), reg(r2));
+			ins('call_1', reg(r3), reg(r1), str('let localContext = new Context(global, bootPayload, null, globalVariables);for(let i = 0; i < arguments.length; i++){localContext.registers[i] = arguments[i]}localContext.registers[1] = [{t: this, e: localContext.registers, r: -1, h: 0}];localContext.registers[0] = arguments.callee.func;runContext(localContext);return localContext.registers[2];'), reg(r2));
 			ins('setprop', reg(r2), str('func'), ':funccall_' + i + '_' + name);
 			ins('setprop', reg(r), str('call'), reg(r2));
 			refreshRegister(r2);
-			ins('call_1', reg(r3), reg(r1), str('let localContext = new Context(global, bootPayload, null, globalVariables);for(let i = 0; i < arguments.length; i++){localContext.registers[i] = arguments[i]}localContext.registers[124] = [{t: this, e: localContext.registers, r: -1, h: 0}];localContext.registers[125] = arguments.callee.func;runContext(localContext);return localContext.registers[123];'), reg(r2));
+			ins('call_1', reg(r3), reg(r1), str('let localContext = new Context(global, bootPayload, null, globalVariables);for(let i = 0; i < arguments.length; i++){localContext.registers[i] = arguments[i]}localContext.registers[1] = [{t: this, e: localContext.registers, r: -1, h: 0}];localContext.registers[0] = arguments.callee.func;runContext(localContext);return localContext.registers[2];'), reg(r2));
 			freeRegister(r3);
 			ins('setprop', reg(r2), str('func'), ':funcapply_' + i + '_' + name);
 			ins('setprop', reg(r), str('apply'), reg(r2));
@@ -479,11 +476,11 @@ function handleNode(child) {
 				requestRegister();
 			}
 			r = requestRegister();
-			ins('getprop', reg(124), str('length'), reg(r));
+			ins('getprop', reg(1), str('length'), reg(r));
 			r1 = requestRegister();
 			ins('sub', reg(r), 1, reg(r1));
 			refreshRegister(r);
-			ins('getprop', reg(124), reg(r1), reg(r));
+			ins('getprop', reg(1), reg(r1), reg(r));
 			freeRegister(r1);
 			ins('setprop', reg(r), str('t'), reg(0));
 			freeRegister(r);
@@ -500,11 +497,11 @@ function handleNode(child) {
 			ins(':funccall_' + i + '_' + name);
 			requestRegister(); // makes up for argument lost
 			r = requestRegister();
-			ins('getprop', reg(124), str('length'), reg(r));
+			ins('getprop', reg(1), str('length'), reg(r));
 			r1 = requestRegister();
 			ins('sub', reg(r), 1, reg(r1));
 			refreshRegister(r);
-			ins('getprop', reg(124), reg(r1), reg(r));
+			ins('getprop', reg(1), reg(r1), reg(r));
 			freeRegister(r1);
 			ins('setprop', reg(r), str('t'), reg(0));
 			freeRegister(r);
@@ -516,18 +513,18 @@ function handleNode(child) {
 			if(child.type == 'ArrowFunctionExpression' && child.expression) {
 				handleNode({type: 'ReturnStatement', argument: child.body});
 			}else handleNode(child.body);
-			ins('undefined', reg(123));
+			ins('undefined', reg(2));
 			r = requestRegister();
-			ins('getprop', reg(124), str('pop'), reg(r));
+			ins('getprop', reg(1), str('pop'), reg(r));
 			r1 = requestRegister();
-			ins('call_0', reg(124), reg(r), reg(r1));
+			ins('call_0', reg(1), reg(r), reg(r1));
 			refreshRegister(r);
 			ins('getprop', reg(r1), str('e'), reg(r));
 			r2 = requestRegister();
 			ins('getprop', reg(r1), str('r'), reg(r2));
-			ins('setprop', reg(r), 125, reg(r2));
+			ins('setprop', reg(r), 0, reg(r2));
 			freeRegister(r2);
-			ins('setprop', reg(r), 123, reg(123));
+			ins('setprop', reg(r), 2, reg(2));
 			refreshRegister(r1);
 			ins('context', reg(r1));
 			ins('setprop', reg(r1), str('registers'), reg(r));
@@ -568,11 +565,11 @@ function handleNode(child) {
 		break;
 		case 'Super': 
 			r = requestRegister();
-			ins('getprop', reg(124), str('length'), reg(r));
+			ins('getprop', reg(1), str('length'), reg(r));
 			r1 = requestRegister();
 			ins('sub', reg(r), 1, reg(r1));
 			refreshRegister(r);
-			ins('getprop', reg(124), reg(r1), reg(r));
+			ins('getprop', reg(1), reg(r1), reg(r));
 			refreshRegister(r1);
 			ins('getprop', reg(r), str('f'), reg(r1));
 			refreshRegister(r);
@@ -585,11 +582,11 @@ function handleNode(child) {
 		break;
 		case 'ThisExpression': 
 			r = requestRegister();
-			ins('getprop', reg(124), str('length'), reg(r));
+			ins('getprop', reg(1), str('length'), reg(r));
 			r1 = requestRegister();
 			ins('sub', reg(r), 1, reg(r1));
 			refreshRegister(r);
-			ins('getprop', reg(124), reg(r1), reg(r));
+			ins('getprop', reg(1), reg(r1), reg(r));
 			refreshRegister(r1);
 			ins('getprop', reg(r), str('t'), reg(r1));
 			child.register = r1;
@@ -974,17 +971,17 @@ function handleNode(child) {
 			ins('setprop', reg(r), str('length'), 126);
 			r3 = requestRegister();
 			ins('getprop', reg(e), str('func'), reg(r3));
-			ins('setprop', reg(r), 125, reg(r3));
+			ins('setprop', reg(r), 0, reg(r3));
 			freeRegister(r3);
-			ins('setprop', reg(r), 124, reg(124));
+			ins('setprop', reg(r), 1, reg(1));
 			args.forEach((v, index) => {
 				ins('setprop', reg(r), index, v);
 			});
 			ins('setprop', reg(r1), str('e'), reg(r2));
 			refreshRegister(r2);
-			ins('getprop', reg(124), str('push'), reg(r2));
+			ins('getprop', reg(1), str('push'), reg(r2));
 			r3 = requestRegister();
-			ins('call_1', reg(124), reg(r2), reg(r1), reg(r3));
+			ins('call_1', reg(1), reg(r2), reg(r1), reg(r3));
 			freeRegister(r1);
 			freeRegister(r2);
 			ins('context', reg(r3));
@@ -992,19 +989,19 @@ function handleNode(child) {
 			freeRegister(r3);
 			ins(':call_' + i);
 			refreshRegister(r);
-			ins('getprop', reg(124), str('length'), reg(r));
+			ins('getprop', reg(1), str('length'), reg(r));
 			ins('sub', reg(r), 1, reg(r));
 			r1 = requestRegister();
-			ins('getprop', reg(124), reg(r), reg(r1));
+			ins('getprop', reg(1), reg(r), reg(r1));
 			refreshRegister(r);
 			ins('getprop', reg(r1), str('h'), reg(r));
 			freeRegister(r1);
 			ins('jz', reg(r), ':pcall_' + i);
 			freeRegister(r);
-			handleNode({type: 'ThrowStatement', argument: 123});
+			handleNode({type: 'ThrowStatement', argument: 2});
 			ins(':pcall_' + i);
 			if(child.type == 'NewExpression') r = requestRegister();
-			ins('mov', reg(123), (child.type == 'NewExpression' ? reg(r) : reg(child.register)));
+			ins('mov', reg(2), (child.type == 'NewExpression' ? reg(r) : reg(child.register)));
 			if(child.type == 'NewExpression') {
 				r2 = requestRegister();
 				ins('neq', reg(r), 0, reg(r2));

@@ -1,0 +1,40 @@
+{
+  "presets": ["es2015"],
+  "env": {
+    "production": {
+      "presets": [],
+      "plugins": [
+        "transform-remove-throw",
+        "transform-minify-booleans",
+        "minify-builtins",
+        "transform-inline-consecutive-adds",
+        "minify-dead-code-elimination",
+        "minify-constant-folding",
+        "minify-flip-comparisons",
+        "minify-guarded-expressions",
+        "minify-infinity",
+        ["minify-mangle-names", {
+          "topLevel": true
+        }],
+        "transform-member-expression-literals",
+        "transform-merge-sibling-variables",
+        "minify-numeric-literals",
+        "transform-property-literals",
+        "transform-regexp-constructors",
+        "transform-remove-console",
+        "transform-remove-debugger",
+        "transform-remove-undefined",
+        "minify-replace",
+        "minify-simplify",
+        "transform-simplify-comparison-operators",
+        "minify-type-constructors",
+        "transform-undefined-to-void"
+      ],
+      "minified": true,
+      "comments": false
+    }
+  },
+  "plugins": [
+    "babel-plugin-transform-remove-strict-mode"
+  ]
+}

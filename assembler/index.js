@@ -93,6 +93,9 @@ let instructions = [
 	//debugging
 	new Instruction('report', ['rc']),
 	new Instruction('dump', []),
+
+	//obfuscation related
+	new Instruction('nop', []),
 ]
 
 String.prototype.splitC = function(delim, seqs, removeEscapes) {
@@ -136,6 +139,18 @@ String.prototype.splitC = function(delim, seqs, removeEscapes) {
 	return ret;
 }
 
+function outValue(out, int) {
+	let b = [];
+    let i = 0;
+    while((int & -128) != 0) {
+        out.push((int & 127) | 128);
+        int >>= 7;
+    }
+    out.push(int);
+}
+
+const flags_size = 3;
+
 function assemble(asm) {
 	let labels = {};
 	let out = [];
@@ -176,7 +191,7 @@ function assemble(asm) {
 			console.log(`Line ${lino + 1}: Mismatched instruction arguments`);
 			return;
 		}
-		out.push(insi);
+		outValue(out, insi);
 		for(let i = 1; i < args.length; i++) {
 			let arg = args[i];
 			let cfg = ins.args[i - 1];
@@ -217,11 +232,11 @@ function assemble(asm) {
 				}
 			}
 			if(!delayedLabel && isRegister && ptrc) {
-				out.push(0b1000000 | n);
+				outValue(out, n << flags_size | 1);
 			}else if(!delayedLabel && isRegister && !ptrc){
-				out.push(0b0000000 | n);
+				outValue(out, n << flags_size);
 			}else if(delayedLabel || (!isRegister && !isNaN(n))) {
-				out.push(127);
+				out.push(2);
 				if(delayedLabel) {
 					delayedLabels.push({i: out.length, label: arg.substring(1)});
 				}
@@ -229,18 +244,27 @@ function assemble(asm) {
 				buf.writeDoubleBE(delayedLabel ? 0 : n, 0);
 				out.push(...buf);
 			}else if(!delayedLabel && !isRegister){
-				out.push(126);
-				if((!arg.startsWith('\'') && !arg.startsWith('"') && !arg.startsWith('`')) || (!arg.endsWith('\'') && !arg.endsWith('"') && !arg.endsWith('`'))) {
-					console.log(`Line ${lino + 1}: Invalid string constant`);
+				if((arg.startsWith('\'') && arg.endsWith('\'')) || (arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith('`') && arg.endsWith('`'))) {
+					out.push(3);
+					arg = arg.substring(1, arg.length - 1).replace(new RegExp('\\' + arg.substring(0, 1), 'g'), arg.substring(0, 1));
+					let rarg = [];
+					for(let i = 0; i < arg.length; i++) {
+						rarg.push(arg.charCodeAt(i));
+					}
+					rarg.push(0);
+					out.push(...rarg);
+				}else if(arg == 'true') {
+					out.push(4);
+				}else if(arg == 'false') {
+					out.push(5);
+				}else if(arg == 'null') {
+					out.push(6);
+				}else if(arg == 'undefined') {
+					out.push(7);
+				}else{
+					console.log(`Line ${lino + 1}: Unknown constant type for arg ${i}`);
 					return;
 				}
-				arg = arg.substring(1, arg.length - 1).replace(new RegExp('\\' + arg.substring(0, 1), 'g'), arg.substring(0, 1));
-				let rarg = [];
-				for(let i = 0; i < arg.length; i++) {
-					rarg.push(arg.charCodeAt(i));
-				}
-				rarg.push(0);
-				out.push(...rarg);
 			}else{
 				console.log(`Line ${lino + 1}: Unknown error for arg ${i}`);
 				return;

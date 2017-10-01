@@ -43,7 +43,7 @@ Run `./run.sh` with the repository directory as your current working directory.
 * Global value numbering
 * Dead code elimination
 * Register reduction
-* 2-byte registers (more registers, more types of constants, instructions as registers)
+* Instructions as arguments
 
 ## Architecture
 
