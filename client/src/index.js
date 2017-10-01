@@ -1,13 +1,16 @@
-const fs = require('fs');
-
-if(process.argv.length != 3) {
-	console.log('Usage: node index.js <input.sobj>');
-	process.exit();
+var pl = 'EUASQANjb25zb2xlAEASQANsb2cAUBJQA2Z1bmMAYCaAASxggAFwNXALAAABOiNwE3ADcgALAAAAtRNwA3QAQBNwA2gACAATcANmAFA4YBJgA3JlZ2lzdGVycwCAASRgE2ADbGVuZ3RoAAh+ElADZnVuYwCQARNgCACQARNgCAEQE2AIAAN0ZXN0ABNwA2UAgAESEANwdXNoAIABGRCAAXCQATiQAROQAQNyZWdpc3RlcnMAYBIQA2xlbmd0aABgAWAIAWASEGBwEnADaABgNGALAAABMRIQA2xlbmd0aABgL2AIAnA1cAsAAAFEAWAIAmASEGBwE3ADaAAIARIQA3BvcABgGBBgcBJwA2UAYBJwA3IAgAETYAgAgAETYAgCIDhwE3ADcmVnaXN0ZXJzAGAPIDAzCwAAAUQZQFADdGVzdAAw';
+bootPayload = [];
+{
+	var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+	var str = String(pl).replace(/[=]+$/, ''); // #31: ExtendScript bad parse of /=
+    if (str.length % 4 == 1) {
+      throw new InvalidCharacterError("'atob' failed: The string to be decoded is not correctly encoded.");
+    }
+    let tmp = 0;
+    for (var bc = 0, bs, buffer, idx = 0; buffer = str.charAt(idx++);~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,bc++ % 4) ? (tmp = (255 & bs >> (-2 * bc & 6)), bootPayload.push(tmp), tmp) : 0) {
+    	buffer = chars.indexOf(buffer);
+    }
 }
-
-let payloadbuf = fs.readFileSync(process.argv[2]);
-
-bootPayload = [...payloadbuf];
 
 globalVariables = {};
 
@@ -142,6 +145,18 @@ function readArg(ctx) {
 		return null;
 	}else if(b === 7) {
 		return undefined;
+	}else if(b === 8) {
+		let b = decodeByte(ctx);
+		return b > 127 ? b -= 256 : b;
+	}else if(b === 9) {
+		let b = decodeByte(ctx) << 8 | decodeByte(ctx);
+		return b > 32767 ? b -= 65536 : b;
+	}else if(b === 10) {
+		let b = decodeByte(ctx) << 16 | decodeByte(ctx) << 8 | decodeByte(ctx);
+		return b > 8388607 ? b -= 16777216 : b;
+	}else if(b === 11) {
+		let b = decodeByte(ctx) << 24 | decodeByte(ctx) << 16 | decodeByte(ctx) << 8 | decodeByte(ctx);
+		return b > 2147483647 ? b -= 4294967296 : b;
 	}
 	return ctx.registers[b];
 }
@@ -466,6 +481,7 @@ function runContext(ctx) {
 	try{
 		debugger;
 		while((ins = readInstruction(ctx)) != null) {
+			console.log(ins.toString());
 			ins(ctx);
 		}
 	}catch(e) {

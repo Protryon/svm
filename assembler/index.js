@@ -149,7 +149,7 @@ function outValue(out, int) {
     out.push(int);
 }
 
-const flags_size = 3;
+const flags_size = 4;
 
 function assemble(asm) {
 	let labels = {};
@@ -236,13 +236,34 @@ function assemble(asm) {
 			}else if(!delayedLabel && isRegister && !ptrc){
 				outValue(out, n << flags_size);
 			}else if(delayedLabel || (!isRegister && !isNaN(n))) {
-				out.push(2);
-				if(delayedLabel) {
-					delayedLabels.push({i: out.length, label: arg.substring(1)});
+				if(delayedLabel || (n % 1. == 0. && Math.abs(n) < 2147483648)) {
+					if(!delayedLabel && Math.abs(n) < 128) {
+						out.push(8);
+						out.push(n);
+					}else if(!delayedLabel && Math.abs(n) < 32768) {
+						out.push(9);
+						out.push((n >>> 8) & 0xFF);
+						out.push(n);
+					}else if(!delayedLabel && Math.abs(n) < 8388608) {
+						out.push(10);
+						out.push((n >>> 16) & 0xFF);
+						out.push((n >>> 8) & 0xFF);
+						out.push(n);
+					}else if(delayedLabel || Math.abs(n) < 2147483648) {
+						if(delayedLabel) n = 0;
+						out.push(11);
+						delayedLabels.push({i: out.length, label: arg.substring(1)});
+						out.push((n >>> 24) & 0xFF);
+						out.push((n >>> 16) & 0xFF);
+						out.push((n >>> 8) & 0xFF);
+						out.push(n);
+					}
+				}else{
+					out.push(2);
+					let buf = new Buffer(8);
+					buf.writeDoubleBE(n, 0);
+					out.push(...buf);
 				}
-				let buf = new Buffer(8);
-				buf.writeDoubleBE(delayedLabel ? 0 : n, 0);
-				out.push(...buf);
 			}else if(!delayedLabel && !isRegister){
 				if((arg.startsWith('\'') && arg.endsWith('\'')) || (arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith('`') && arg.endsWith('`'))) {
 					out.push(3);
@@ -273,10 +294,12 @@ function assemble(asm) {
 	});
 	delayedLabels.forEach(v => {
 		let b = [];
-		let buf = new Buffer(8);
-		buf.writeDoubleBE(labels[v.label], 0);
-		b.push(...buf);
-		out.splice(v.i, 8, ...b);
+		let n = labels[v.label];
+		b.push((n >>> 24) & 0xFF);
+		b.push((n >>> 16) & 0xFF);
+		b.push((n >>> 8) & 0xFF);
+		b.push(n);
+		out.splice(v.i, 4, ...b);
 	})
 	return {out, instructionMap: instructionMap.map(v => {
 		return v.i + ': ' + v.ins;

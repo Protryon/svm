@@ -459,15 +459,13 @@ function handleNode(child) {
 			asm += '//pushreg\n';
 			let rss = regStack.length;
 			registers = [];
-			for(let i = 0; i < 126; i++) {
-				if(i < child.params.length) {
-					asm += '//alloc' + i + '\n';
-				}
-				registers.push(i < child.params.length ? 1 : 0);
+			for(let i = 3; i < child.params.length; i++) {
+				asm += '//alloc' + i + '\n';
+				registers.push(1);
 			}
-			argMap = child.params.map(v => {
+			argMap = [null, null, null].concat(child.params.map(v => {
 				return v.name;
-			});
+			}));
 			ins(':funcapply_' + i + '_' + name);
 			if(argMap.length == 0) {
 				requestRegister();
