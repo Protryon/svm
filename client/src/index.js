@@ -1,11 +1,8 @@
-var pl = 'EUASQANjb25zb2xlAEASQANsb2cAUBJQA2Z1bmMAYCaAASxggAFwNXALAAABOiNwE3ADcgALAAAAtRNwA3QAQBNwA2gACAATcANmAFA4YBJgA3JlZ2lzdGVycwCAASRgE2ADbGVuZ3RoAAh+ElADZnVuYwCQARNgCACQARNgCAEQE2AIAAN0ZXN0ABNwA2UAgAESEANwdXNoAIABGRCAAXCQATiQAROQAQNyZWdpc3RlcnMAYBIQA2xlbmd0aABgAWAIAWASEGBwEnADaABgNGALAAABMRIQA2xlbmd0aABgL2AIAnA1cAsAAAFEAWAIAmASEGBwE3ADaAAIARIQA3BvcABgGBBgcBJwA2UAYBJwA3IAgAETYAgAgAETYAgCIDhwE3ADcmVnaXN0ZXJzAGAPIDAzCwAAAUQZQFADdGVzdAAw';
+var pl = 'EUASQANjb25zb2xlAEASQANsb2cAUBJQA2Z1bmMAYCaAASxggAFwNXALAAAIeiNwE3ADcgALAAAApRNwA3QAQBNwA2gACAATcANmAFA4YBJgA3IAgAEkYBNgA2xlbmd0aAAIfhJQA2Z1bmMAkAETYAgAkAETYAgBEBNgCAADdGVzdAATcANlAIABEhADcHVzaACAARkQgAFwkAE4kAETkAEDcgBgEhADbGVuZ3RoAGABYAgBYBIQYHAScANoAGAzCwAACBcPIDAzCwAAANsZkAGgAQN0ZXN0NQAwMwsAAAjCE4ABA3QAUBOAAQNoAAgAE4ABA2YAYDhwEnADcgCQASRwE3ADbGVuZ3RoAAh+EmADZnVuYwCgARNwCACgARNwCAEQE3AIAAN0ZXN0MQATgAEDZQCQARIQA3B1c2gAkAEZEJABgAGgATigAROgAQNyAHASEANsZW5ndGgAcAFwCAFwEhBwgAESgAEDaABwNHALAAAFHBIQA2xlbmd0aABwNbABCwAABswjsAETsAEDcgALAAACEhOwAQN0AIABE7ABA2gACAATsAEDZgCQATigARKgAQNyAMABJKABE6ABA2xlbmd0aAAIfhKQAQNmdW5jANABE6ABCADQAROgAQgBEBOgAQgAA3Rlc3Q0ABOwAQNlAMABEhADcHVzaADAARkQwAGwAdABONABE9ABA3IAoAESEANsZW5ndGgAoAEBoAEIAaABEhCgAbABErABA2gAoAE0oAELAAAGwxIQA2xlbmd0aACgAS+gAQgCsAE1sAELAAAIwgGgAQgCoAESEKABsAEzCwAABoQTsAEDbGVuZ3RoAAh+EqABA2Z1bmMA4AETsAEIAOABE7ABCAEQE7ABCAADdGVzdDUAE8ABA2UA0AESEANwdXNoANABGRDQAcAB4AE44AET4AEDcgCwARIQA2xlbmd0aACwAQGwAQgBsAESELABwAESwAEDaACwATSwAQkAxRIQA2xlbmd0aACwAS+wAQgCwAE1wAELAAAIwgGwAQgCsAESELABwAETwAEDaAAIARIQA3BvcACwARgQsAHAARLAAQNlALABEsABA3IA0AETsAEIANABE7ABCAIgOMABE8ABA3IAsAEzCQDFGWBwA3Rlc3QyADARcBJwA2NvbnNvbGUAcBJwA2xvZwCAARKAAQNmdW5jAJABJrABLJABsAGgATWgAQsAAAS4I6ABE6ABA3IACwAABBkToAEDdABwE6ABA2gACAAToAEDZgCAATiQARKQAQNyALABJJABE5ABA2xlbmd0aAAIfhKAAQNmdW5jAMABE5ABCADAAROQAQgBEBOQAQgAA3Rlc3QzABOgAQNlALABEhADcHVzaACwARkQsAGgAcABOMABE8ABA3IAkAESEANsZW5ndGgAkAEzCwAABCsBkAEIAZABEhCQAaABEqABA2gAkAE0kAELAAAErxIQA2xlbmd0aACQAS+QAQgCoAE1oAELAAAIwgGQAQgCkAESEJABoAEToAEDaAAIARIQA3BvcACQARgQkAGgARKgAQNlAJABEqABA3IAsAETkAEIALABE5ABCAIgOKABE6ABA3IAkAEPIDAzCwAABMQZcIABA3Rlc3QzADARgAESgAEDY29uc29sZQCAARKAAQNsb2cAkAESkAEDZnVuYwCgASbAASygAcABsAEzCQGAEoABA2UAcBKAAQNyAJABE3AIAJABE3AIAiA4gAETgAEDcgBwDyAwMwsAAAUwGVBgA3Rlc3QxADARYBJgA2NvbnNvbGUAYBJgA2xvZwBwEnADZnVuYwCAASagASyAAaABkAE1kAEJA1EjkAETkAEDcgALAAAHfBOQAQN0AGATkAEDaAAIABOQAQNmAHA4gAESgAEDcgCgASSAAROAAQNsZW5ndGgACH4ScANmdW5jALABE4ABCACwATMLAAAHRROAAQN0AFATgAEDaAAIABOAAQNmAGA4cBJwA3IAkAEkcBNwA2xlbmd0aAAIfhJgA2Z1bmMAoAETcAgAoAETcAgBEBNwCAADdGVzdDEAE4ABA2UAkAESEANwdXNoAJABGRCQAYABoAE4oAEToAEDcgBwEhADbGVuZ3RoAHABcAgBcBIQcIABEoABA2gAcDRwCQUcEhADbGVuZ3RoAHAvcAgCgAE1gAELAAAIwgFwCAJwEhBwgAETgAEDaAAIARIQA3BvcABwGBBwgAEzCQT4E7ABA2gACAESEANwb3AAoAEYEKABsAESsAEDZQCgARKwAQNyAMABE6ABCADAAROgAQgCIDiwAROwAQNyAKABDyAwMwsAAAbZGYABkAEDdGVzdDQAMBGQARKQAQNjb25zb2xlAJABEpABA2xvZwCgARKgAQNmdW5jALABJtABLLAB0AHAATXAAQkAziPAARPAAQNyAAkCvxPAAQN0AJABE8ABA2gACAATwAEDZgCgATiwARKwAQNyANABJLABMwkCaROAAQgBEBOAAQgAA3Rlc3QyABOQAQNlAKABEhADcHVzaACgARkQoAGQAbABOLABE7ABA3IAgAESEANsZW5ndGgAgAEBgAEIAYABEhCAAZABEpABA2gAgAE0gAELAAAIDBIQA2xlbmd0aACAAS+AAQgCkAE1kAELAAAIwgGAAQgCgAESEIABkAETkAEDaAAIARIQA3BvcACAARgQgAGQARKQAQNlAIABEpABA3IAoAETgAEIAKABE4ABCAIgOJABE5ABA3IAgAEPIDAzCQNcMwkDUTRgCwAACHESEANsZW5ndGgAYC9gCAJwNXALAAAIwgFgCAJgEhBgcBNwA2gACAESEANwb3AAYBgQYHAScANlAGAScANyAIABE2AIAIABE2AIAiA4cBNwA3IAYA8gMDMLAAAIhBlAUAN0ZXN0ADARUBJQA2NvbnNvbGUAUBJQA2xvZwBgEmADZnVuYwBwJpABLHCQAYABNYABCQUlI4ABE4ABA3IACQYnMwkFtg==';
 bootPayload = [];
 {
 	var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 	var str = String(pl).replace(/[=]+$/, ''); // #31: ExtendScript bad parse of /=
-    if (str.length % 4 == 1) {
-      throw new InvalidCharacterError("'atob' failed: The string to be decoded is not correctly encoded.");
-    }
     let tmp = 0;
     for (var bc = 0, bs, buffer, idx = 0; buffer = str.charAt(idx++);~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,bc++ % 4) ? (tmp = (255 & bs >> (-2 * bc & 6)), bootPayload.push(tmp), tmp) : 0) {
     	buffer = chars.indexOf(buffer);
@@ -16,15 +13,15 @@ globalVariables = {};
 
 class Context {
 	constructor(global, payload, registers, variables) {
-		this.global = global;
-		this.payload = payload;
-		this.registers = registers || [];
+		this.g = global;
+		this.p = payload;
+		this.r = registers || [];
 		if(registers == null) {
-			this.registers[2] = undefined;
-			this.registers[1] = [{h: 0, t: global, f: null}];
-			this.registers[0] = 0;
+			this.r[2] = undefined;
+			this.r[1] = [{h: 0, t: global, f: null}];
+			this.r[0] = 0;
 		}
-		this.variables = variables || {};
+		this.v = variables || {};
 	}
 }
 global.Context = Context;
@@ -50,7 +47,7 @@ function decodeByte(ctx) {
 	let reg = 0 << 3;
 	if(bootPayload == null) throw 'this is a dummy throw to fix a babel-minify bug';
 	while(depth++ < 127 && reg & 7 == 1) {
-		reg = ctx.registers[reg >> 3];
+		reg = ctx.r[reg >> 3];
 	}
 	if(reg & 7 == 1) {
 		throw "Circular pointer";
@@ -58,13 +55,13 @@ function decodeByte(ctx) {
 	if(reg & 0b00000111 != 0) {
 		throw "Unexpected constant";
 	}
-	let r = Math.round(ctx.registers[reg >> 3]);
-	if(r >= ctx.payload.length || r < 0) {
+	let r = Math.round(ctx.r[reg >> 3]);
+	if(r >= ctx.p.length || r < 0) {
 		return -1;
 	}
-	ctx.registers[reg >> 3] = r + 1;
+	ctx.r[reg >> 3] = r + 1;
 	lastDecodePos = r;
-	return ctx.payload[r];
+	return ctx.p[r];
 }
 
 function decode(ctx) {
@@ -72,7 +69,7 @@ function decode(ctx) {
 	let reg = 0 << 3;
 	if(bootPayload == null) throw 'this is a dummy throw to fix a babel-minify bug';
 	while(depth++ < 127 && reg & 7 == 1) {
-		reg = ctx.registers[reg >> 3];
+		reg = ctx.r[reg >> 3];
 	}
 	if(reg & 7 == 1) {
 		throw "Circular pointer";
@@ -80,12 +77,12 @@ function decode(ctx) {
 	if(reg & 0b00000111 != 0) {
 		throw "Unexpected constant";
 	}
-	let r = Math.round(ctx.registers[reg >> 3]);
-	if(r >= ctx.payload.length || r < 0) {
+	let r = Math.round(ctx.r[reg >> 3]);
+	if(r >= ctx.p.length || r < 0) {
 		return -1;
 	}
-	let ret = readVarInt(ctx.payload, r);
-	ctx.registers[reg >> 3] = r + ret.c;
+	let ret = readVarInt(ctx.p, r);
+	ctx.r[reg >> 3] = r + ret.c;
 	lastDecodePos = r;
 	return ret.out;
 }
@@ -95,7 +92,7 @@ function readRegister(ctx) {
 	let depth = 0;
 	if(bootPayload == null) throw 'this is a dummy throw to fix a babel-minify bug';
 	while(depth++ < 127 && b & 7 == 1) {
-		b = ctx.registers[b >> 3];
+		b = ctx.r[b >> 3];
 	}
 	if(b & 7 == 1) {
 		throw "Circular register pointer";
@@ -111,7 +108,7 @@ function readArg(ctx) {
 	let depth = 0;
 	if(bootPayload == null) throw 'no';
 	while(depth++ < 127 && b & 7 == 1) {
-		b = ctx.registers[b >> 3];
+		b = ctx.r[b >> 3];
 	}
 	if(b & 7 == 1) {
 		throw "Circular register pointer";
@@ -158,7 +155,7 @@ function readArg(ctx) {
 		let b = decodeByte(ctx) << 24 | decodeByte(ctx) << 16 | decodeByte(ctx) << 8 | decodeByte(ctx);
 		return b > 2147483647 ? b -= 4294967296 : b;
 	}
-	return ctx.registers[b];
+	return ctx.r[b];
 }
 
 let lastInstruction = 0;
@@ -173,7 +170,7 @@ function readInstruction(ctx) {
 }
 
 function writeArg(ctx, value) {
-	ctx.registers[readRegister(ctx)] = value;
+	ctx.r[readRegister(ctx)] = value;
 }
 
 let instructions = [
@@ -252,15 +249,15 @@ let instructions = [
 	function(ctx) {
 		let r1 = readRegister(ctx);
 		let r2 = readRegister(ctx);
-		let v1 = ctx.registers[r1];
-		ctx.registers[r1] = ctx.registers[r2];
-		ctx.registers[r2] = v1;
+		let v1 = ctx.r[r1];
+		ctx.r[r1] = ctx.r[r2];
+		ctx.r[r2] = v1;
 	},
 
 	//JS interface
 	//global
 	function(ctx) {
-		writeArg(ctx, ctx.global);
+		writeArg(ctx, ctx.g);
 	},
 	//getprop
 	function(ctx) {
@@ -420,13 +417,13 @@ let instructions = [
 	//branching
 	//jmp
 	function(ctx) {
-		ctx.registers[0] = readArg(ctx);
+		ctx.r[0] = readArg(ctx);
 	},
 	//jz
 	function(ctx) {
 		let a = readArg(ctx);
 		if(a == 0 || a == undefined) {
-			ctx.registers[0] = readArg(ctx);
+			ctx.r[0] = readArg(ctx);
 		}else{
 			readArg(ctx);
 		}
@@ -435,7 +432,7 @@ let instructions = [
 	function(ctx) {
 		let a = readArg(ctx);
 		if(a != 0 && a != undefined) {
-			ctx.registers[0] = readArg(ctx);
+			ctx.r[0] = readArg(ctx);
 		}else{
 			readArg(ctx);
 		}
@@ -444,11 +441,11 @@ let instructions = [
 	//variables
 	//setvar
 	function(ctx) {
-		ctx.variables[readArg(ctx)] = readArg(ctx);
+		ctx.v[readArg(ctx)] = readArg(ctx);
 	},
 	//getvar
 	function(ctx) {
-		writeArg(ctx, ctx.variables[readArg(ctx)]);
+		writeArg(ctx, ctx.v[readArg(ctx)]);
 	},
 
 	//VM interface
@@ -464,7 +461,7 @@ let instructions = [
 	},
 	//dump
 	function(ctx) {
-		for(let i = 0; i < ctx.registers.length; i++) {
+		for(let i = 0; i < ctx.r.length; i++) {
 			console.log(i + ':', readArg(ctx));
 		}
 	},

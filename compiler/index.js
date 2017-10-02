@@ -191,7 +191,7 @@ function handleNode(child) {
 			ins('setprop', reg(r), 2, reg(2));
 			refreshRegister(r1);
 			ins('context', reg(r1));
-			ins('setprop', reg(r1), str('registers'), reg(r));
+			ins('setprop', reg(r1), str('r'), reg(r));
 			freeRegister(r1);
 			freeRegister(r);
 		break;
@@ -525,7 +525,7 @@ function handleNode(child) {
 			ins('setprop', reg(r), 2, reg(2));
 			refreshRegister(r1);
 			ins('context', reg(r1));
-			ins('setprop', reg(r1), str('registers'), reg(r));
+			ins('setprop', reg(r1), str('r'), reg(r));
 			freeRegister(r1);
 			freeRegister(r);
 			argMap = oldArgMap;
@@ -963,7 +963,7 @@ function handleNode(child) {
 			ins('setprop', reg(r1), str('f'), reg(e));
 			ins('context', reg(r));
 			r2 = requestRegister();
-			ins('getprop', reg(r), str('registers'), reg(r2));
+			ins('getprop', reg(r), str('r'), reg(r2));
 			refreshRegister(r);
 			ins('arr', reg(r));
 			ins('setprop', reg(r), str('length'), 126);
@@ -983,7 +983,7 @@ function handleNode(child) {
 			freeRegister(r1);
 			freeRegister(r2);
 			ins('context', reg(r3));
-			ins('setprop', reg(r3), str('registers'), reg(r));
+			ins('setprop', reg(r3), str('r'), reg(r));
 			freeRegister(r3);
 			ins(':call_' + i);
 			refreshRegister(r);

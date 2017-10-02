@@ -48,6 +48,16 @@ String.prototype.splitC = function(delim, seqs, removeEscapes) {
 
 let activeRegisters = {};
 
+function shuffle(input) {
+	let out = new Array(input.length);
+	let rin = input.slice(0);
+	for(let i = 0; i < out.length; i++) {
+		let x = Math.floor(Math.random() * rin.length);
+		out[i] = rin[x];
+		rin.splice(x, 1);
+	}
+	return out;
+}
 
 let asm = fs.readFileSync(process.argv[2], 'utf8');
 
@@ -339,9 +349,39 @@ lines.forEach((args, lino) => {
 });
 
 lines = lines.filter(v => {
-	return v.length > 0;
+	return v.length > 0 && !v[0].startsWith('//');
 })
 
+let lineIndex = [];
+for(let i = 0; i < lines.length; i += 30) {
+	lineIndex[i / 30] = i;
+}
+
+let lShuffle = shuffle(lineIndex);
+for(let i = 0; i < lShuffle.length; i++) {
+	if(lShuffle[i] == 0) {
+		lShuffle[i] = lShuffle[0];
+		break;
+	}
+}
+
+let olines = lines.slice(0);
+lShuffle[0] = 0;
+lShuffle.forEach((vx, i) => {
+	//if(i == 0 || vx == i * 30) return;
+	let nw = vx;
+	let original = i * 30;
+	let v = lines.splice(original + 2 * i, 30, [':shuffle_' + (nw / 30)], ...olines.slice(nw, nw + 30), ['jmp', (nw / 30) == lShuffle.length - 1 ? ':eof' : ':shuffle_' + ((nw / 30) + 1)]);
+	//lines.splice(nw, 30, [':shuffle_' + (nw / 30)], ...v, ['jmp', (nw / 30) == lShuffle.length - 1 ? ':eof' : ':shuffle_' + ((nw / 30) + 1)]);
+});
+
+for(let i = 0; i < lines.length; i++) {
+	if(lines[i][0] == ':eof') {
+		lines.splice(i, 1);
+		lines.push([':eof']);
+		break;
+	}
+}
 
 fs.writeFileSync(process.argv[3], lines.map(v => {
 	return v.map(v2 => {
