@@ -194,6 +194,9 @@ let instructions = {
 	//debugging
 	'report': ['get'],
 	'dump': [],
+
+	//obfuscation
+	'nop': [],
 };
 
 let instructionRules = {
@@ -344,7 +347,7 @@ lines.forEach((args, lino) => {
 			instructionRules[key].f(lino, args[0], args.slice(1));
 		}
 	}catch(e) {
-		console.log(e.stack, 'Line: ' + lino);
+		console.log(e, 'Line: ' + (lino + 1));
 	}
 });
 

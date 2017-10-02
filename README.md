@@ -34,8 +34,8 @@ Run `./run.sh` with the repository directory as your current working directory.
 * Metamorphic bytecode
 * OTP shuffling to create bytecode
 * Bytecode scheduler/internal async functions
-* Enclaving + shuffling bytecode
-* Register shuffling
+* Register shuffling?
+* Jump to instruction arguments
 
 ### Performance
 * Compile-time 'hotspotting'

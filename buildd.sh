@@ -11,5 +11,5 @@ node index.js ../build/optimized.sasm ../build/out.sobj ../build/out.smap
 cd ..
 cd client
 ./embed.sh ../build/out.sobj global
-npm run build --production
+npm run build
 cd ..

@@ -10,6 +10,6 @@ cd assembler
 node index.js ../build/optimized.sasm ../build/out.sobj ../build/out.smap
 cd ..
 cd client
-./embed.sh ../build/out.sobj global
+./embed.sh ../build/out.sobj window
 npm run build --production
 cd ..
