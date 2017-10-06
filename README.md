@@ -30,12 +30,12 @@ Run `./run.sh` with the repository directory as your current working directory.
 * Instruction repackaging, shuffling, modification/generation
 * VM internals repackaging
 * Byte-by-byte decoding or block-by-block decoding
-* VM-eval statement
-* Metamorphic bytecode
-* OTP shuffling to create bytecode
+* Metamorphic bytecode -- mov instead of jmp, copy in all the code, etc
 * Bytecode scheduler/internal async functions
-* Register shuffling?
 * Jump to instruction arguments
+* Hide instructions via mov and call register
+* jmp conditional to add r0 X r0 with X cur instr + true * off
+* Internal negation?
 
 ### Performance
 * Compile-time 'hotspotting'
@@ -44,6 +44,7 @@ Run `./run.sh` with the repository directory as your current working directory.
 * Dead code elimination
 * Register reduction
 * Instructions as arguments
+* Track register state across time rather and livescan only
 
 ## Architecture
 

@@ -906,6 +906,13 @@ function handleNode(child) {
 		break;
 		case 'MemberExpression':
 			let o = handleExpression(child.object);
+			if(child.object.type == 'StringLiteral' || child.object.type == 'NumericLiteral' || child.object.type == 'RegExpLiteral' || child.object.type == 'BooleanLiteral') {
+				child.isExtern = true;
+			}else if(child.object.type == 'Identifier' && extern.includes(child.object.name)) {
+				child.isExtern = true;
+			}else if(child.object.type == 'MemberExpression') {
+				child.isExtern = child.object.isExtern;
+			}
 			child.register = requestRegister();
 			if(child.computed) {
 				let v = handleExpression(child.property);
@@ -945,16 +952,22 @@ function handleNode(child) {
 				return handleExpression(v);
 			});
 			let t = child.register;
-			let firstNode = child.callee;
+			let isExtern = false;
 			if(child.type == 'CallExpression') {
 				// maybe we should export these values from the real AST handlers rather than copy/modify
 				if(child.callee.type == 'MemberExpression') {
 					t = handleExpression(child.callee.object);
-					firstNode = child.callee.object;
+					if(child.callee.object.type == 'StringLiteral' || child.callee.object.type == 'NumericLiteral' || child.callee.object.type == 'RegExpLiteral' || child.callee.object.type == 'BooleanLiteral') {
+						isExtern = true;
+					}else if(child.callee.object.type == 'Identifier' && extern.includes(child.callee.object.name)) {
+						isExtern = true;
+					}else if(child.callee.object.type == 'MemberExpression') {
+						isExtern = child.callee.object.isExtern;
+					}
 					e = requestRegister();
 					if(child.callee.computed) {
 						let v = handleExpression(child.callee.property);
-						ins('getprop', t, v, e)
+						ins('getprop', t, v, e);
 						freeRegister(v);
 					}else{
 						let v = child.callee.property.type == 'Identifier' ? str(child.callee.property.name) : handleExpression(child.callee.property);
@@ -990,7 +1003,6 @@ function handleNode(child) {
 				ins('setprop', child.register, str('__proto__'), r);
 				refreshRegister(r);
 			}
-			let isExtern = firstNode.type == 'Identifier' && extern.includes(firstNode.name);
 			i = branchCounter++;
 			if(isExtern) {
 				freeRegister(r);

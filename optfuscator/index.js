@@ -48,6 +48,8 @@ String.prototype.splitC = function(delim, seqs, removeEscapes) {
 
 let activeRegisters = {};
 
+let variables = {};
+
 function shuffle(input) {
 	let out = new Array(input.length);
 	let rin = input.slice(0);
@@ -72,12 +74,26 @@ function reg(reg) {
 }
 
 function allocRegister(r) {
+	if(typeof r == 'string' && r.startsWith('r')) r = parseInt(r.substring(1), 10);
+	if(hrStack[curStack] == null || hrStack[curStack] < r) hrStack[curStack] = r;
 	if(activeRegisters[r] != null) {
 		activeRegisters[r].ct++;
 	}else activeRegisters[r] = {sets: [], gets: [], ct: 1};
 }
 
+function requestRegister(min) {
+	for(let i = min || 3; i < 65536; i++) {
+		if(activeRegisters[i] == null || activeRegisters[i].ct === 0) {
+			if(hrStack[curStack] == null || hrStack[curStack] < i) hrStack[curStack] = i;
+			activeRegisters[i] = {sets: [], gets: [], ct: 1};
+			return 'r' + i;
+		}
+	}
+	throw "Out of registers!";
+}
+
 function freeRegister(r) {
+	if(typeof r == 'string' && r.startsWith('r')) r = parseInt(r.substring(1), 10);
 	if(activeRegisters[r] == null) {
 		throw "Double free";
 	}
@@ -199,6 +215,156 @@ let instructions = {
 	'nop': [],
 };
 
+let hasDynamicVariables = false;
+
+let variableRules = {
+	registerifySingleScope: {
+		f: function(vr) {
+			if(hasDynamicVariables) return; // we cannot guarantee whats been set/get w/o dynamic analysis
+			let scope;
+			for(let get of vr.gets) {
+				if(scope === undefined) scope = get.stack;
+				else if(scope != get.stack) return;
+			}
+			for(let set of vr.sets) {
+				if(scope === undefined) scope = set.stack;
+				else if(scope != set.stack) return;
+			}
+			let r = requestRegister(hrStack[scope] + 1);
+			for(let get of vr.gets) {
+				let oins = lines[get.line];
+				processInstruction(get.line, 'mov', [r, oins[2]], false, true); //TODO: track register state
+			}
+			for(let set of vr.sets) {
+				let oins = lines[set.line];
+				processInstruction(set.line, 'mov', [oins[2], r], false, true);
+			}
+			//freeRegister(r);
+		},
+		improves: ['speed'],
+		worsens: [],
+		type: 'obfuscation',
+	}
+};
+
+function applyVariableRules(vr) {
+	for(let key in variableRules) {
+		variableRules[key].f(vr);
+	}
+}
+
+let latestLineProcessed = -1;
+let stackCounter = 0;
+let curStack = -1;
+let rStack = [];
+let hrStack = {};
+
+function processInstruction(lino, ins, args, insert, skipReg) {
+	let patched = lino <= latestLineProcessed;
+	if(patched) {
+		lines.splice(lino, insert ? 0 : 1, [ins].concat(args));
+	}
+	if(lino > latestLineProcessed) latestLineProcessed = lino;
+	if(ins == null) return;
+	if(ins.startsWith('//')) {
+		if(ins.startsWith('//alloc')) {
+			allocRegister(parseInt(ins.substring(7), 10));
+		}else if(ins.startsWith('//free')) {
+			freeRegister(parseInt(ins.substring(6), 10));
+		}else if(ins.startsWith('//pushreg')) {
+			varStack.push(variables);
+			let nv = {};
+			for(let key in variables) {
+				nv[key] = variables[key];
+			}
+			variables = nv;
+			regStack.push(activeRegisters);
+			activeRegisters = {};
+			rStack.push(curStack);
+			curStack = stackCounter++;
+		}else if(ins.startsWith('//popreg')) {
+			for(let r in activeRegisters) {
+				if(activeRegisters[r] == null) continue;
+				activeRegisters[r].ct = 1;
+				freeRegister(r);
+			}
+			let ov = varStack.pop();
+			for(let key of ov) {
+				if(!(key in variables)) {
+					applyVariableRules(ov[key]);
+				}
+			}
+			variables = ov;
+			activeRegisters = regStack.pop();
+			curStack = rStack.pop();
+		}
+		return;
+	}
+	if(ins == 'setvar') {
+		if(!isstr(args[0])) {
+			hasDynamicVariables = true;
+		}else{
+			let a = variables[args[0].substring(1, args[0].length - 1)] || {sets: [], gets: []};
+			variables[args[0].substring(1, args[0].length - 1)] = a;
+			a.sets.push({stack: curStack, line: lino, to: args[1]});
+		}
+	}else if(ins == 'getvar') {
+		if(!isstr(args[0])) {
+			hasDynamicVariables = true;
+		}else{
+			let a = variables[args[0].substring(1, args[0].length - 1)] || {sets: [], gets: []};
+			variables[args[0].substring(1, args[0].length - 1)] = a;
+			a.gets.push({stack: curStack, line: lino, to: args[1]});
+		}
+	}
+	let dins = instructions[ins];
+	if(dins == null || (args.length) != dins.length) {
+		throw "Invalid instruction: " + ins;
+	}
+	if(!skipReg)
+		args.forEach((v, i) => {
+			if(v.startsWith('r')) {
+				let r = parseInt(v.substring(1), 10);
+				if(r < 3) return;
+				let st = dins[i].split('/');
+				let gi = activeRegisters[r].gets.length;
+				let si = activeRegisters[r].sets.length;
+				if(patched) {
+					gi = 0;
+					si = 0;
+					for(let j = 0; j < activeRegisters[r].gets.length; j++) {
+						if(activeRegisters[r].gets[j].line == lino) {
+							gi = j;
+							if(insert) break;
+						}else if(!insert && (activeRegisters[r].gets[j].line > lino || j == activeRegisters[r].gets.length - 1)) {
+							activeRegisters[r].gets.splice(gi, j - gi);
+						}
+					}
+					for(let j = 0; j < activeRegisters[r].sets.length; j++) {
+						if(activeRegisters[r].sets[j].line == lino) {
+							si = j;
+							if(insert) break;
+						}else if(!insert && (activeRegisters[r].sets[j].line > lino || j == activeRegisters[r].sets.length - 1)) {
+							activeRegisters[r].sets.splice(si, j - si);
+						}
+					}
+				}
+				for(let sto of st) {
+					if(sto == 'get') {
+						activeRegisters[r].gets.splice(gi, 0, {line: lino, ins: args[0], argi: i});
+					}else if(sto == 'set' || sto == 'set_const') {
+						activeRegisters[r].sets.splice(si, 0, {line: lino, ins: args[0], args: args.slice(1), cst: sto == 'set_const'});
+					}
+				}
+			}
+		});
+	for(let key of Object.keys(instructionRules)) {
+		if(instructionRules[key].f(lino, ins, args)) {
+			return;
+		}
+	}
+}
+
 let instructionRules = {
 	uselessInstruction: {
 		f: function(line, ins, args) {
@@ -213,8 +379,52 @@ let instructionRules = {
 		worsens: [],
 		type: 'optimization',
 	},
+	replaceInstruction: {
+		f: function(line, ins, args) {
+			let repl = null;
+			if(ins == 'jmp') {
+				repl = ['mov', args[0], 'r0'];
+			}else if(ins == 'gr') {
+				repl = ['le', args[1], args[0], args[2]];
+			}else if(ins == 'greq') {
+				repl = ['leeq', args[1], args[0], args[2]];
+			}else return;
+			processInstruction(line, repl[0], repl.slice(1), false);
+			return true;
+		},
+		improves: [],
+		worsens: [],
+		type: 'obfuscation',
+	},
+	expandInstructions: {
+		f: function(line, ins, args) {
+			if(ins == 'mul') {
+				let r = requestRegister();
+				processInstruction(line, 'div', ['1', args[1], r], true);
+				latestLineProcessed++;
+				processInstruction(line + 1, 'div', [args[0], r, args[2]], false);
+				freeRegister(r);
+			}else if(ins == 'neq') {
+				processInstruction(line, 'eq', [args[0], args[1], args[2]], true);
+				latestLineProcessed++;
+				processInstruction(line + 1, 'not', [args[2], args[2]], false);
+			}else if(ins == 'neq_typed') {
+				processInstruction(line, 'eq_typed', [args[0], args[1], args[2]], true);
+				latestLineProcessed++;
+				processInstruction(line + 1, 'not', [args[2], args[2]], false);
+			}
+			//internal type equals?
+			//greq/leeq?
+			// intennal <?
+		},
+		improves: [],
+		worsens: ['size', 'speed'],
+		type: 'obfuscation',
+	},
 	//code factoring
 }
+
+//TODO: variable rules: fold into registers if local
 
 let registerRules = {
 	constantFolding: {
@@ -300,56 +510,24 @@ let registerRules = {
 	//register shuffling
 };
 let regStack = [];
+let varStack = [];
 
-lines.forEach((args, lino) => {
+for(let lino = 0; lino < lines.length; lino++) {
+	let args = lines[lino];
 	try{
-		if(args.length == 0) return;
+		if(args.length == 0) continue;
 		if(args.length == 1 && args[0].startsWith(':') && !args[0].includes(' ')) {
-			return;
+			continue;
 		}
-		if(args.length == 1 && args[0].startsWith('//')) {
-			if(args[0].startsWith('//alloc')) {
-				allocRegister(parseInt(args[0].substring(7), 10));
-			}else if(args[0].startsWith('//free')) {
-				freeRegister(parseInt(args[0].substring(6), 10));
-			}else if(args[0].startsWith('//pushreg')) {
-				regStack.push(activeRegisters);
-				activeRegisters = {};
-			}else if(args[0].startsWith('//popreg')) {
-				for(let r in activeRegisters) {
-					if(activeRegisters[r] == null) continue;
-					activeRegisters[r].ct = 1;
-					freeRegister(r);
-				}
-				activeRegisters = regStack.pop();
-			}
-			return;
-		}
-		let ins = instructions[args[0]];
-		if(ins == null || (args.length - 1) != ins.length) {
-			throw "Invalid instruction: " + args[0];
-		}
-		args.slice(1).forEach((v, i) => {
-			if(v.startsWith('r')) {
-				let r = parseInt(v.substring(1), 10);
-				if(r < 3) return;
-				let st = ins[i].split('/');
-				for(let sto of st) {
-					if(sto == 'get') {
-						activeRegisters[r].gets.push({line: lino, ins: args[0], argi: i});
-					}else if(sto == 'set' || sto == 'set_const') {
-						activeRegisters[r].sets.push({line: lino, ins: args[0], args: args.slice(1), cst: sto == 'set_const'});
-					}
-				}
-			}
-		});
-		for(let key of Object.keys(instructionRules)) {
-			instructionRules[key].f(lino, args[0], args.slice(1));
-		}
+		if(lino <= latestLineProcessed) continue;
+		processInstruction(lino, args[0], args.slice(1), false);
 	}catch(e) {
 		console.log(e, 'Line: ' + (lino + 1));
 	}
-});
+}
+for(let key in variables) {
+	applyVariableRules(variables[key]);
+}
 
 lines = lines.filter(v => {
 	return v.length > 0 && !v[0].startsWith('//');
@@ -374,7 +552,7 @@ lShuffle.forEach((vx, i) => {
 	//if(i == 0 || vx == i * 30) return;
 	let nw = vx;
 	let original = i * 30;
-	let v = lines.splice(original + 2 * i, 30, [':shuffle_' + (nw / 30)], ...olines.slice(nw, nw + 30), ['jmp', (nw / 30) == lShuffle.length - 1 ? ':eof' : ':shuffle_' + ((nw / 30) + 1)]);
+	let v = lines.splice(original + 2 * i, 30, [':shuffle_' + (nw / 30)], ...olines.slice(nw, nw + 30), ['mov', (nw / 30) == lShuffle.length - 1 ? ':eof' : ':shuffle_' + ((nw / 30) + 1), 'r0']);
 	//lines.splice(nw, 30, [':shuffle_' + (nw / 30)], ...v, ['jmp', (nw / 30) == lShuffle.length - 1 ? ':eof' : ':shuffle_' + ((nw / 30) + 1)]);
 });
 

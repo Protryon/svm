@@ -35,6 +35,7 @@
     }
   },
   "plugins": [
+    "conditional-compilation",
     "babel-plugin-transform-remove-strict-mode"
   ]
 }

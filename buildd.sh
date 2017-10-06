@@ -7,9 +7,11 @@ cd optfuscator
 node index.js ../build/out.sasm ../build/optimized.sasm
 cd ..
 cd assembler
-node index.js ../build/optimized.sasm ../build/out.sobj ../build/out.smap
+node index.js ../build/optimized.sasm ../build/out.sobj ../build/out.smap ../build/instrs.txt
+cd ..
+cd preprocessor
+node index.js ../build/out.sobj global ../build/instrs.txt ../client/src/index.js ../client/src/index.js
 cd ..
 cd client
-./embed.sh ../build/out.sobj global
 npm run build
 cd ..

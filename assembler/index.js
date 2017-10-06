@@ -1,7 +1,7 @@
 const fs = require('fs');
 
-if(process.argv.length != 5) {
-	console.log('Usage: node index.js <input.sasm> <output.sobj> <output.smap>');
+if(process.argv.length != 6) {
+	console.log('Usage: node index.js <input.sasm> <output.sobj> <output.smap> <instrs.txt>');
 	return;
 }
 
@@ -157,13 +157,44 @@ function assemble(asm) {
 	let instructionMap = [];
 	let lines = asm.splitC('\n', ['\'', '"', '`'], false);
 	let delayedLabels = [];
-	lines.map(v => {
+	let instrs = [];
+	lines = lines.map(v => {
 		let vi = v.indexOf('//');
 		if(vi >= 0) {
 			return v.substring(0, vi);
 		}
 		return v;
-	}).forEach((line, lino) => {
+	});
+	lines.forEach(line => {
+		let ins = line.split(' ')[0];
+		if(ins.startsWith(':') && !ins.includes(' ')) {
+			return;
+		}
+		if(!instrs.includes(ins)) instrs.push(ins);
+	});
+	instrs.sort((a, b) => {
+		let ia = -1;
+		let ib = -1;
+		for(let i = 0; i < instructions.length; i++) {
+			if(instructions[i].ins == a) {
+				ia = i;
+				break;
+			}
+		}
+		for(let i = 0; i < instructions.length; i++) {
+			if(instructions[i].ins == b) {
+				ib = i;
+				break;
+			}
+		}
+		if(ia < ib) return -1;
+		else return 1;
+	});
+	let insIndexMap = [];
+	instrs.forEach(v => {
+		insIndexMap.push(v);
+	});
+	lines.forEach((line, lino) => {
 		if(line.trim().length == 0) return;
 		instructionMap.push({i: out.length, ins: line});
 		let args = line.trim().splitC(' ', ['\'', '"', '`'], true).filter(v => {
@@ -187,11 +218,10 @@ function assemble(asm) {
 			return;
 		}
 		if(ins.args.length != args.length - 1) {
-			debugger;
 			console.log(`Line ${lino + 1}: Mismatched instruction arguments`);
 			return;
 		}
-		outValue(out, insi);
+		outValue(out, insIndexMap.indexOf(args[0]));
 		for(let i = 1; i < args.length; i++) {
 			let arg = args[i];
 			let cfg = ins.args[i - 1];
@@ -300,13 +330,28 @@ function assemble(asm) {
 		b.push((n >>> 8) & 0xFF);
 		b.push(n);
 		out.splice(v.i, 4, ...b);
-	})
+	});
 	return {out, instructionMap: instructionMap.map(v => {
 		return v.i + ': ' + v.ins;
-	}).join('\n')};
+	}).join('\n'), instrs: instrs.join('\n')};
+}
+
+function encrypt(asm) {
+	let nasm = asm;
+	for(let i = 0; i < asm.length; i++) {
+		let s = (i / 40) | 0;
+		let key = i ^ s;
+		for(let j = i - 4; j <= i - 1; j++) {
+			if(j > 0 && j < asm.length && j >= (s * 40) && j < ((s + 1) * 40)) key ^= asm[j] ^ j;
+		}
+		key %= 256;
+		nasm[i] = asm[i] ^ key;
+	}
+	return nasm;
 }
 
 let assembled = assemble(asm);
 
-fs.writeFileSync(process.argv[3], new Uint8Array(assembled.out));
+fs.writeFileSync(process.argv[3], new Uint8Array(encrypt(assembled.out)));
 fs.writeFileSync(process.argv[4], assembled.instructionMap);
+fs.writeFileSync(process.argv[5], assembled.instrs);
