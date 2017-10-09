@@ -564,6 +564,17 @@ for(let i = 0; i < lines.length; i++) {
 	}
 }
 
+if(lines.length > 15)
+	for(let i = 0; i < Math.max(lines.length / 100, 5); i++) {
+		let x = (Math.random() * lines.length) | 0;
+		if(x < Math.max(lines.length / 100, 15)) {
+			i++;
+			continue;
+		}
+		let len = 5 + (Math.random() * Math.max(lines.length / 100, 15)) | 0;
+		lines.splice(x, 0, ['mov', ':overlap_' + i, 'r0'], ['obf_pushx', len], [':overlap_' + i]);
+	}
+
 fs.writeFileSync(process.argv[3], lines.map(v => {
 	return v.map(v2 => {
 		if(isstr(v2)) {

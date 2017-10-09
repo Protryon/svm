@@ -96,6 +96,7 @@ let instructions = [
 
 	//obfuscation related
 	new Instruction('nop', []),
+	new Instruction('obf_pushx', 'c'),
 ]
 
 String.prototype.splitC = function(delim, seqs, removeEscapes) {
