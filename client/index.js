@@ -64,14 +64,14 @@ var INS_not = true;
 var INS_div = true;
 var INS_sub = true;
 var glob = global;
-var pl = 'AwgD0AEDCAbgAQPgATAD0AFADkAwUA9QCwAAA7oEQAVAA2NvbnNvbGUAQAVAA2xvZwBQBVADZnVuYwBgC4ABDWCAAXAQcAsAAAOvCXAGcANyAAsAAAMtBnADdABABnADaAAIAAZwA2YAUBFgBWADcgCAAQpgBmADbGVuZ3RoAAh+BVADZnVuYwCQAQZgCACQAQZgCAEQBmAIAwM2ID4gMwAGcANlAIABBRADcHVzaACAAQgQgAFwkAERkAEDCwAAAyYABGAFYANjb25zb2xlAGAFYANsb2cAcAVwA2Z1bmMAkAELsAENkAGwAaABEKABCwAABDwJoAEGoAEDcgALAAABdwagAQN0AGAGoAEDaAAIAAagAQNmAHARkAEFkAEDcgCwAQqQAQaQAQNsZW5ndGgACH4FcANmdW5jAMABBpABCADAAQaQAQgBEAaQAQgDgAEGoAEDZQCwAQUQA3B1c2gAsAEIELABoAHAARHAAQbAAQNyAJABBRADbGVuZ3RoAJABAJABCAGQAQUQkAGgAQWgAQNoAJABAwsAAAO/AAPQAVAD4AFgAQgBYIABAVCAAXAEUAVQA2NvbnNvbGUAUAVQA2xvZwBgBWADZnVuYwCAAQugAQ2AAaABkAEQkAELAAADCgmQAQaQAQNyAAsAAAJlBpABA3QAUAaQAQNoAAgABpABA2YAYBGAAQWAAQNyAKABCoABBoABA2xlbmd0aAAIfgVgA2Z1bmMAsAEGgAEIALABBoABCAEQBoABCANwBpABA2UAoAEFEANwdXNoAKABCBCgAZABsAERsAEGsAEDcgCAAQMLAAACbAAFEANsZW5ndGgAgAEAgAEIAYABBRCAAZABBZABA2gAgAEPgAELAAADAAUQA2xlbmd0aACAAQ6AAQgCkAEQkAELAAAESQCAAQgCgAEFEIABkAEGkAEDaAAIAQMIAiAFEANwb3AAgAEHEIABkAEFkAEDZQCAAQWQAQNyAKABBoABCACgAQaAAQgCIBGQAQaQAQNyAIABAyAwAwsAAAMPAAhQYHAwA9ABYAPgAXAMYHCAAQKAAYABAwkAwwAGkAEDcgBgBRADbGVuZ3RoAGAAYAgBYAUQYHAFcANoAGAPYAsAAAOlBRADbGVuZ3RoAGAOYAgCcBBwCwAABEkAYAgCYAUQYHAGcANoAAgBAwgCIAUQA3BvcABgBxBgcAVwA2UAYAVwA3IAgAEGYAgAgAEGYAgCIBFwBnADcgBgAyAwAwsAAAO6AAhAUAM2ID4gMwAwAwkBnwAPkAELAAAEMgUQA2xlbmd0aACQAQ6QAQgCoAEQoAELAAAESQCQAQgCkAEFEJABoAEGoAEDaAAIAQMIAiAFEANwb3AAkAEHEJABoAEFoAEDZQCQAQWgAQNyALABBpABCACwAQaQAQgCIBGgAQagAQNyAJABAyAwAwsAAARCAAhgcIABMAMLAAAESQA=';
+var pl = 'AwkJ0NUHBQI9OQrr6AkN3CG0WF63ROwCDrFL4xgc8gudZkPDMYV9RUxMam5pCiRsfRNFbCIrcVN8IkccM/KkTgquDKhVb9ICo1pq3nDQKxwgI1lYVCSj3CUqXNqXZlsqisJRbhf5tjEDSrfKX2Muw6PC/TiywKObF3Bxcm8OH3z/6aSx4un1rNl/d//BtHDiddvNBfBhyq5m9m7ys33veKSn1NDCxCBQ39rYXl7cxrXFwsrDPkG0L1kjzygmVC/KUiVUV6RETVijwNnXpCZG3Uw4MFJHyDsgyctWpy9ZXVH3eubhZH386eFpc6ew8X0Zk/r74Oj+fX/ka3B5fnP9ZAIShgufA1jKgBMFX0MEEBXU34qcCUdJjXdxEhIeeXw1DDZVMhEWQdC4Gg7cWiyMD1LWMfdx11Awae3aLEnMS9jIwEtL5GzAyMHgae/yRXZrYn5YGgLn+F8yH9v9XzcZuaBqUBSS5V6GYAgJiI0Uc2CDYIpt+QfmDmT8A+sHgBgAhmt9lInjCW2M6+UPb5rwiPrx8vudnpPigIDk65ru74G/yLrZurswRMek2zREy7DCRzm6w7FITN/DwrG7uIuM1KjPlpS63djl6cS5veblwbes2d/Jv9rBxbLSstu+p6DC74eHg4Gf8/P6DBH5npcDlGOE7naFRLKKC/44zvNumh4lPZls5SIrjw1BGlg5HlgBUBcxdhJeEDZlBVLO7DFRtBSwb2WGcFfrbtqv25Efif9uYlI/NXZ5VD1dKSEKazUvUhB0LTE0cmI9MVj/6DKd/Oh4rCFGfO64x8hSUzyqVsZvlwRpjBibCmKDy06X9oa5Idq/DTMmttIONi8tSAlUTPDwEwKAcHYUeP/f2hT3ed1HiOoLz0mG/ByqTv2MfM4u1apOkKVhqs24oKIbHbohJgkJtCq7jQe6UsAUm7MxorFBylvMuUHLRa8U789WGrJ7w2Bjw3V3YNB5egkfW/1/Bi2lAUZZTcdnLVhD13ArViOsCFEoV6oHM5uMj4iZjZCHEPTjZ8ek/3v9expT0enMvkLH9tWdcmlS2TbcZiiuOtI0IraygpAnxM3v+YxuyoOUn3vTOC6YGbBDQhaFv9PUEY+wHBhhECYezdhIJEXD1l4jMNS9PlNEtKUoUSp/YSjCgEtW1TiC2sLXPJzBX0MykubwddXV4ZEVbmnqiQ0Ya+lpmFcnG3Q/4423uvP4WXG4LiREHdG7skWfivWSl5Oe7ME6PaJHVTQxONteLLqsffozAhJiil6VhmuPWpiO0jdQSFDIyMRJYfrW2ill+trOMBZ3VNy1gnlbdRmcxPF6FZn7gQy4M/eMm/Dt/2t9VEv91sFJPY7bz049ifbnUCv97APdRJEREVrQO70a8no83HqagBa2tZ32YQ0JlW37AQYg58GoqhLo5JwQvuBPNhfIl8S6Cvac8rUEIz18eTROKomDeAJf+YZ7Sh0=';
 //end preprocessor
 (function () {
 
 	var bootPayload = [];
 	{
 		var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-		var str = String(pl).replace(/[=]+$/, ''); // #31: ExtendScript bad parse of /=
+		var str = String(pl).replace(/[=]+$/, '');
 		var tmp = 0;
 		for (var bc = 0, bs, buffer, idx = 0; buffer = str.charAt(idx++); ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer, bc++ % 4) ? (tmp = 255 & bs >> (-2 * bc & 6), bootPayload.push(tmp), tmp) : 0) {
 			buffer = chars.indexOf(buffer);
@@ -83,6 +83,7 @@ var pl = 'AwgD0AEDCAbgAQPgATAD0AFADkAwUA9QCwAAA7oEQAVAA2NvbnNvbGUAQAVAA2xvZwBQBV
 
 		this.g = global;
 		this.p = payload;
+		Object.defineProperty;
 		this.r = registers || [];
 		if (registers == null) {
 			this.r[2] = undefined;
@@ -90,12 +91,34 @@ var pl = 'AwgD0AEDCAbgAQPgATAD0AFADkAwUA9QCwAAA7oEQAVAA2NvbnNvbGUAQAVAA2xvZwBQBV
 			this.r[0] = 0;
 		}
 		this.v = variables || {};
+		this.s = 0;
+		this.d = 0;
+		this.f = 0;
+		thid.t = [];
 	};
 
 	var v = { g: this };
 	v.g.ct = Context;
 
 	var globalContext = new Context(glob, bootPayload, null, v);
+
+	function decrypt(ctx, i) {
+		var si = i / 40 | 0;
+		sd = i - si * 40;
+		if (ctx.d != sd || ctx.f != si || ctx.d >= 40) {
+			ctx.d = 0;
+			ctx.f = si;
+			ctx.s = si ^ si * 40;
+		}
+		if (ctx.d == 0) ctx.s = si ^ si * 40;
+		for (; ctx.d < sd; ctx.d++) {
+			if (ctx.d - 5 >= 0) ctx.s ^= ctx.t.splice(0, 1)[0];
+		}
+		var v = ctx.p[ctx.d + si * 40] ^ ctx.s;
+		ctx.t.push(v ^ i);
+		ctx.s ^= v ^ ctx.d + si * 40;
+		return v;
+	}
 
 	function readVarInt(b, i) {
 		var output = 0;
@@ -106,7 +129,7 @@ var pl = 'AwgD0AEDCAbgAQPgATAD0AFADkAwUA9QCwAAA7oEQAVAA2NvbnNvbGUAQAVAA2xvZwBQBV
 			output |= (v3 & 127) << v2++ * 7;
 			if (v2 > 5) return { out: output, c: v2 };
 		} while ((v3 & 128) == 128);
-		return { out: output, c: v2 };
+		return { o: output, c: v2 };
 	}
 	v.g.rvi = readVarInt;
 
@@ -122,7 +145,7 @@ var pl = 'AwgD0AEDCAbgAQPgATAD0AFADkAwUA9QCwAAA7oEQAVAA2NvbnNvbGUAQAVAA2xvZwBQBV
 	}
 	v.g.sa = safeArray;
 
-	function decodeByte(ctx) {
+	function nextReadLocation(ctx) {
 		var depth = 0;
 		var reg = safeZero() << 4;
 		if (reg != 0) throw 'this is a dummy throw to fix a babel-minify bug';
@@ -135,6 +158,12 @@ var pl = 'AwgD0AEDCAbgAQPgATAD0AFADkAwUA9QCwAAA7oEQAVAA2NvbnNvbGUAQAVAA2xvZwBQBV
 		if (reg & 7 != 0) {
 			throw "Unexpected constant";
 		}
+		return reg;
+	}
+	v.g.nr = nextReadLocation;
+
+	function decodeByte(ctx) {
+		var reg = nextReadLocation(ctx);
 		var r = Math.round(ctx.r[reg >> 4]);
 		if (r >= ctx.p.length || r < 0) {
 			return -1;
@@ -146,18 +175,7 @@ var pl = 'AwgD0AEDCAbgAQPgATAD0AFADkAwUA9QCwAAA7oEQAVAA2NvbnNvbGUAQAVAA2xvZwBQBV
 	v.g.db = decodeByte;
 
 	function decode(ctx) {
-		var depth = 0;
-		var reg = safeZero() << 4;
-		if (reg != 0) throw 'this is a dummy throw to fix a babel-minify bug';
-		while (depth++ < 127 && reg & 7 == 1) {
-			reg = ctx.r[reg >> 4];
-		}
-		if (reg & 7 == 1) {
-			throw "Circular pointer";
-		}
-		if (reg & 7 != 0) {
-			throw "Unexpected constant";
-		}
+		var reg = nextReadLocation(ctx);
 		var r = Math.round(ctx.r[reg >> 4]);
 		if (r >= ctx.p.length || r < 0) {
 			return -1;
@@ -165,24 +183,12 @@ var pl = 'AwgD0AEDCAbgAQPgATAD0AFADkAwUA9QCwAAA7oEQAVAA2NvbnNvbGUAQAVAA2xvZwBQBV
 		var ret = readVarInt(ctx.p, r);
 		ctx.r[reg >> 4] = r + ret.c;
 		lastDecodePos = r;
-		return ret.out;
+		return ret.o;
 	}
 	v.g.dg = decode;
 
 	function readRegister(ctx) {
-		var b = decode(ctx);
-		if (b < 0) throw 'this is a dummy throw to fix a babel-minify bug';
-		var depth = 0;
-		while (depth++ < 127 && b & 7 == 1) {
-			b = ctx.r[b >> 4];
-		}
-		if (b & 7 == 1) {
-			throw "Circular register pointer";
-		}
-		if (b & 7 != 0) {
-			throw "Unexpected constant";
-		}
-		return b >> 4;
+		return decode(ctx) >> 4;
 	}
 	v.g.dr = readRegister;
 

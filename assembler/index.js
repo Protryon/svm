@@ -337,15 +337,15 @@ function assemble(asm) {
 }
 
 function encrypt(asm) {
-	let nasm = asm;
+	let nasm = [];
 	for(let i = 0; i < asm.length; i++) {
 		let s = (i / 40) | 0;
-		let key = i ^ s;
+		let key = 0;
 		for(let j = i - 4; j <= i - 1; j++) {
-			if(j > 0 && j < asm.length && j >= (s * 40) && j < ((s + 1) * 40)) key ^= asm[j] ^ j;
+			if(j >= 0 && j < asm.length && j >= (s * 40) && j < ((s + 1) * 40)) key ^= asm[j];
 		}
 		key %= 256;
-		nasm[i] = asm[i] ^ key;
+		nasm.push(asm[i] ^ key);
 	}
 	return nasm;
 }
