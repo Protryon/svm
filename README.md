@@ -29,8 +29,7 @@ Run `./run.sh` with the repository directory as your current working directory.
 ### Obfuscation
 * Instruction repackaging, shuffling, modification/generation
 * VM internals repackaging
-* Byte-by-byte decoding or block-by-block decoding
-* Metamorphic bytecode -- mov instead of jmp, copy in all the code, etc
+* Metamorphic bytecode -- copy in all the code, etc
 * Bytecode scheduler/internal async functions
 * Jump to instruction arguments
 * Hide instructions via mov and call register

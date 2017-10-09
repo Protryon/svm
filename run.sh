@@ -1,4 +1,4 @@
 #!/bin/bash
 cd client
-node index.js ../build/out.sobj
+node index.js
 cd ..

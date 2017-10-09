@@ -60,7 +60,7 @@ var INS_not = true;
 var INS_div = true;
 var INS_sub = true;
 var glob = global;
-var pl = 'AwkJ0NUHBQI9OQrr6AkN3CG0WF63ROwCDrFL4xgc8gudZkPDMYV9RUxMam5pCiRsfRNFbCIrcVN8IkccM/KkTgquDKhVb9ICo1pq3nDQKxwgI1lYVCSj3CUqXNqXZlsqisJRbhf5tjEDSrfKX2Muw6PC/TiywKObF3Bxcm8OH3z/6aSx4un1rNl/d//BtHDiddvNBfBhyq5m9m7ys33veKSn1NDCxCBQ39rYXl7cxrXFwsrDPkG0L1kjzygmVC/KUiVUV6RETVijwNnXpCZG3Uw4MFJHyDsgyctWpy9ZXVH3eubhZH386eFpc6ew8X0Zk/r74Oj+fX/ka3B5fnP9ZAIShgufA1jKgBMFX0MEEBXU34qcCUdJjXdxEhIeeXw1DDZVMhEWQdC4Gg7cWiyMD1LWMfdx11Awae3aLEnMS9jIwEtL5GzAyMHgae/yRXZrYn5YGgLn+F8yH9v9XzcZuaBqUBSS5V6GYAgJiI0Uc2CDYIpt+QfmDmT8A+sHgBgAhmt9lInjCW2M6+UPb5rwiPrx8vudnpPigIDk65ru74G/yLrZurswRMek2zREy7DCRzm6w7FITN/DwrG7uIuM1KjPlpS63djl6cS5veblwbes2d/Jv9rBxbLSstu+p6DC74eHg4Gf8/P6DBH5npcDlGOE7naFRLKKC/44zvNumh4lPZls5SIrjw1BGlg5HlgBUBcxdhJeEDZlBVLO7DFRtBSwb2WGcFfrbtqv25Efif9uYlI/NXZ5VD1dKSEKazUvUhB0LTE0cmI9MVj/6DKd/Oh4rCFGfO64x8hSUzyqVsZvlwRpjBibCmKDy06X9oa5Idq/DTMmttIONi8tSAlUTPDwEwKAcHYUeP/f2hT3ed1HiOoLz0mG/ByqTv2MfM4u1apOkKVhqs24oKIbHbohJgkJtCq7jQe6UsAUm7MxorFBylvMuUHLRa8U789WGrJ7w2Bjw3V3YNB5egkfW/1/Bi2lAUZZTcdnLVhD13ArViOsCFEoV6oHM5uMj4iZjZCHEPTjZ8ek/3v9expT0enMvkLH9tWdcmlS2TbcZiiuOtI0IraygpAnxM3v+YxuyoOUn3vTOC6YGbBDQhaFv9PUEY+wHBhhECYezdhIJEXD1l4jMNS9PlNEtKUoUSp/YSjCgEtW1TiC2sLXPJzBX0MykubwddXV4ZEVbmnqiQ0Ya+lpmFcnG3Q/4423uvP4WXG4LiREHdG7skWfivWSl5Oe7ME6PaJHVTQxONteLLqsffozAhJiil6VhmuPWpiO0jdQSFDIyMRJYfrW2ill+trOMBZ3VNy1gnlbdRmcxPF6FZn7gQy4M/eMm/Dt/2t9VEv91sFJPY7bz049ifbnUCv97APdRJEREVrQO70a8no83HqagBa2tZ32YQ0JlW37AQYg58GoqhLo5JwQvuBPNhfIl8S6Cvac8rUEIz18eTROKomDeAJf+YZ7Sh0=';
+var pl = 'AwsI2NnZ2dzs7OwEA9PRAuOinN8/biF/NARUX2hnJyJmAmVKIRJ+cWVlJSBgBmpFJ2c0XWIGYEUuHR4YZojq5+ds7ZyBkRoba39TUSEnUwxycnl5eQjS36+s2wFHMUI1XR0TY2Z+fRMTRSRHJEQXdBSR8Pnr7Q0PbAlnAHRwFXNqGyMgTkUuHR7onPT3/2/++Z/3/25/f39/fW5eHigLOwAGdnUQEJbn4ZSXZxNlHR7umuGZGZjpcWDxYBGCiJkJC9vQ309NlZUAATcyIiFMH3QDdHAV6433Dw6WlTuquxMQu7qqDmNo+Pn1mwuanoYUAaGgpgYGpczKYmJiAgAoLD80Rgl8bP+O5oYWhyYgNQUFpsLH9/fxNAECcHDAwMUnJp6fKbi/Jyaenbs6m5KWFgal1tDg4OCyghEbGDgJTEcIaBiYmaHCuTk4DGNoa7u+goFis9KDiGkI6OjhsFDRoKWlIHECZVoxcxxwFRU2XGAGalU3ZwRtEnYaH3QDdHAV+53pAQCIiAiJjZUUlQQAFZCRkvr66urmDg+EhYoIAw0dHnAfdAN0cBX7necPDoaFG5qLExCLipoEaGjo6eWLC4qOlhSVBAAWBgaV/PpiYmICACgsPzRGCXxs7572lhaXkJGUBAWW8vfn5+EUFZbl4NDQ1Scmjo8pqK8nJo6NqzqroqYWBpXm4ICBgqKSERsYOAoQGxNDIUh4c/OSgrFSg/Ke/W3snZNzAgICA4iJCQoyMjZWUwECZWoBEn5xexUGbGAGamUHZxR9YgZgZQ4dHuic+SortictsLEREAAQELm56UDh6e4OBqXW0Ht6eQnt4EBBQNDWFhGyx8TMymJjZqChosTEFASX8PUVBZbl4MDAySsqnA0GlfibZQN0cBVzahsDAG5lDh0AwMHHV1aen1nIz1dWnp6IHo+Gj5wai4wkJqXBx9fX0aSnZxNlHR7eAQkZqagJANBhcRER1xYGxbaw4ODmhId7H3QDdHAV6435AQCYmAiZnRCAgSEgNQUFps/K+vr6m5vIyckQEYKBYrPSg4hpCOjo4bBQ0aClpSBQUzBfMRJ+cXsVNlxgBmpVN2cEbWIGYHUeHR74jOkqK6YnLS0tsDEgkJGYmo4Xho6KDgaV5uB7enkIxstbWlrg5iYhssfE/PpiY2aen5Ty9GBx8fD1FQWG9fDQ0NkrKowNBoXoi2UDdHAVc2obExB+dR4dHsi81DcBCQm5uL83No6OmB6flp+M+nzt5OTx98fHwbS3ZxNlHR7OusG5GbgpAbGwoRERpxYGtcbA8PDwi4p8fXjh4ZTm4BAUB3YaH3QDdHAVG3xoCAFhZHQUZQB1Zm4eewRnBARkb11TQ0AoH3QDdHAVG3JmBgQUChoZG2sEaGgIAAYKD38XZQN2ZW0dE2JiAgAoLD80Rgl8bA94BxdnAnVmYxN2BXV2BASB8PXn72/u6Y/n721MW0tFNxR3B2ESMXNwGxg4DGhjayt/GzYWKAg7DR0gCTkzAw==';
 //end preprocessor
 (function(){
 
@@ -78,7 +78,6 @@ var pl = 'AwkJ0NUHBQI9OQrr6AkN3CG0WF63ROwCDrFL4xgc8gudZkPDMYV9RUxMam5pCiRsfRNFbC
 		constructor(global, payload, registers, variables) {
 			this.g = global;
 			this.p = payload;
-			Object.defineProperty
 			this.r = registers || [];
 			if(registers == null) {
 				this.r[2] = undefined;
@@ -89,7 +88,7 @@ var pl = 'AwkJ0NUHBQI9OQrr6AkN3CG0WF63ROwCDrFL4xgc8gudZkPDMYV9RUxMam5pCiRsfRNFbC
 			this.s = 0;
 			this.d = 0;
 			this.f = 0;
-			thid.t = [];
+			this.t = [];
 		}
 	}
 	let v = {g: this};
@@ -98,35 +97,34 @@ var pl = 'AwkJ0NUHBQI9OQrr6AkN3CG0WF63ROwCDrFL4xgc8gudZkPDMYV9RUxMam5pCiRsfRNFbC
 	let globalContext = new Context(glob, bootPayload, null, v);
 
 	function decrypt(ctx, i) {
-		let si = (i / 40) | 0;
-		sd = i - si * 40;
-		if(ctx.f != si || ctx.d >= 40) {
-			ctx.d = 0;
-			ctx.f = si;
-			ctx.s = 0;
-			ctx.t = [];
-		}
-		let v;
-		for(; ctx.d < sd; ctx.d++) {
-            if(ctx.d < 4) {
-				ctx.s ^= ctx.t[ctx.d];
-            }else {ctx.s ^= ctx.t.splice(0, 1)[0] ^ ctx.t[ctx.t.length - 1];}
-			if(ctx.d < sd - 1) {
-				v = ctx.p[ctx.d + (si * 40)] ^ ctx.s;
-				ctx.t.push(v); // TODO: fix this for in-place jumps
-            }
-		}
-		v = ctx.p[ctx.d + (si * 40)] ^ ctx.s;
-		ctx.t.push(v);
-		return v;
+	  let si = (i / 40) | 0;
+	  sd = i - si * 40;
+	  if(sd < ctx.d || ctx.f != si || ctx.d >= 40) {
+	    ctx.d = 0;
+	    ctx.f = si;
+	    ctx.s = 0;
+	    ctx.t = [];
+	  }
+	  let v;
+	  for(; ctx.d <= sd; ctx.d++) {
+	    v = ctx.p[ctx.d + (si * 40)] ^ ctx.s;
+	    ctx.t.push(v);
+	    if(ctx.d < 4) {
+	      ctx.s ^= ctx.t[ctx.d];
+	    }else {
+	      ctx.s ^= ctx.t.splice(0, 1)[0] ^ ctx.t[ctx.t.length - 1];
+	    }
+	  }
+	  return v;
 	}
+	v.g.d = decrypt;
 
-	function readVarInt(b, i) {
+	function readVarInt(ctx, i) {
 	    let output = 0;
 	    let v2 = 0;
 	    let v3 = 0;
 	    do {
-	        v3 = b[v2 + i];
+	        v3 = decrypt(ctx, v2 + i);
 	        output |= (v3 & 127) << (v2++ * 7);
 	        if(v2 > 5) return {out: output, c: v2};
 	    }while((v3 & 128) == 128);
@@ -171,7 +169,7 @@ var pl = 'AwkJ0NUHBQI9OQrr6AkN3CG0WF63ROwCDrFL4xgc8gudZkPDMYV9RUxMam5pCiRsfRNFbC
 		}
 		ctx.r[reg >> 4] = r + 1;
 		lastDecodePos = r;
-		return ctx.p[r];
+		return decrypt(ctx, r);
 	}
 	v.g.db = decodeByte;
 
@@ -181,7 +179,7 @@ var pl = 'AwkJ0NUHBQI9OQrr6AkN3CG0WF63ROwCDrFL4xgc8gudZkPDMYV9RUxMam5pCiRsfRNFbC
 		if(r >= ctx.p.length || r < 0) {
 			return -1;
 		}
-		let ret = readVarInt(ctx.p, r);
+		let ret = readVarInt(ctx, r);
 		ctx.r[reg >> 4] = r + ret.c;
 		lastDecodePos = r;
 		return ret.o;
@@ -621,7 +619,7 @@ var pl = 'AwkJ0NUHBQI9OQrr6AkN3CG0WF63ROwCDrFL4xgc8gudZkPDMYV9RUxMam5pCiRsfRNFbC
 	//nop
 	if(INS_nop)
 		instructions.push(function(ctx) {
-			
+
 		});
 	v.g.is = instructions;
 
