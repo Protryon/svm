@@ -35,7 +35,7 @@
     }
   },
   "plugins": [
-    "conditional-compilation",
-    "babel-plugin-transform-remove-strict-mode"
+    "babel-plugin-transform-remove-strict-mode",
+    "babel-plugin-minify-prototype-extract"
   ]
 }

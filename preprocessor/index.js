@@ -66,6 +66,7 @@ let tinstrs = [
 	'report',
 	'dump',
 	'nop',
+	'obf_pushx',
 ]
 
 let obj = fs.readFileSync(process.argv[2]);

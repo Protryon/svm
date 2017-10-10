@@ -289,7 +289,7 @@ function processInstruction(lino, ins, args, insert, skipReg) {
 				freeRegister(r);
 			}
 			let ov = varStack.pop();
-			for(let key of ov) {
+			for(let key in ov) {
 				if(!(key in variables)) {
 					applyVariableRules(ov[key]);
 				}
@@ -571,7 +571,7 @@ if(lines.length > 15)
 			i++;
 			continue;
 		}
-		let len = 5 + (Math.random() * Math.max(lines.length / 100, 15)) | 0;
+		let len = 5 + (Math.random() * Math.max(lines.length / 3, 15)) | 0;
 		lines.splice(x, 0, ['mov', ':overlap_' + i, 'r0'], ['obf_pushx', len], [':overlap_' + i]);
 	}
 

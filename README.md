@@ -24,26 +24,24 @@ Run `./run.sh` with the repository directory as your current working directory.
 * Function generators
 * Catch external exceptions internally
 * Client builder
-* Bundling and browserification
+* Bundling and Browserification
 
 ### Obfuscation
 * Instruction repackaging, shuffling, modification/generation
 * VM internals repackaging
-* Metamorphic bytecode -- copy in all the code, etc
+* Metamorphic bytecode -- copy in code, alternate decryptions, etc
 * Bytecode scheduler/internal async functions
-* Jump to instruction arguments
 * Hide instructions via mov and call register
-* jmp conditional to add r0 X r0 with X cur instr + true * off
-* Internal negation?
+* Replace `jz/jnz` with `add r0 X r0` with `X = r0 + (true ? 1 : 0) * off`
+* Internal negation of Numbers
 
 ### Performance
-* Compile-time 'hotspotting'
-* Code factoring (very similar to enclaving)
+* Compile-time hotspotting
 * Global value numbering
 * Dead code elimination
 * Register reduction
 * Instructions as arguments
-* Track register state across time rather and livescan only
+* Track register state across time rather than live scanning only
 
 ## Architecture
 
