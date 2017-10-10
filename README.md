@@ -34,6 +34,10 @@ Run `./run.sh` with the repository directory as your current working directory.
 * Hide instructions via mov and call register
 * Replace `jz/jnz` with `add r0 X r0` with `X = r0 + (true ? 1 : 0) * off`
 * Internal negation of Numbers
+* Compiler register maps
+* Bytecode reuse
+* Tamper detection - block by block - chained
+* Code flow graph flattening
 
 ### Performance
 * Compile-time hotspotting

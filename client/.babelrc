@@ -4,6 +4,7 @@
     "production": {
       "presets": [],
       "plugins": [
+        "babel-plugin-minify-prototype-extract",
         "transform-remove-throw",
         "transform-minify-booleans",
         "minify-builtins",
@@ -35,7 +36,6 @@
     }
   },
   "plugins": [
-    "babel-plugin-transform-remove-strict-mode",
-    "babel-plugin-minify-prototype-extract"
+    "babel-plugin-transform-remove-strict-mode"
   ]
 }

@@ -18,6 +18,5 @@
     "babel-plugin-minify-prototype-extract": "file:babel-plugin-minify-prototype-extract"
   },
   "dependencies": {
-
   }
 }

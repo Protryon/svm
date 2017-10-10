@@ -244,6 +244,17 @@ let variableRules = {
 		improves: ['speed'],
 		worsens: [],
 		type: 'obfuscation',
+	},
+	destroyUnusedVariables: {
+		f: function(vr) {
+			if(vr.gets.length > 0) return;
+			for(let set of vr.sets) {
+				lines.splice(set.line, 1);
+			}
+		},
+		improves: ['speed'],
+		worsens: [],
+		type: 'obfuscation',
 	}
 };
 
