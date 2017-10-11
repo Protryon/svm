@@ -59,12 +59,7 @@ module.exports = function(babel) {
               declarations: [ {
                   type: 'VariableDeclarator',
                   id: idm(type + '_' + func),
-                  init: {
-                    type: 'CallExpression',
-                    callee: memm(memm(memm(idm(type), idm(func)), idm('call')), idm('bind')),
-                    arguments: [memm(idm(type), idm(func))],
-                    optional: false,
-                  }
+                  init: memm(idm(type), idm(func)),
                 }
               ],
               kind: 'var'
