@@ -69,6 +69,54 @@ let tinstrs = [
 	'obf_pushx',
 ]
 
+let lookup = '2CzuGfq/Yg79AiDOTpIZNQ4olw163vKdLSsUbkMr+mEahWct8XVBn5FeHRPjxJy0=';
+
+function tripletToBase64 (num) {
+  return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F]
+}
+
+function encodeChunk (uint8, start, end) {
+  var tmp
+  var output = []
+  for (var i = start; i < end; i += 3) {
+    tmp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2])
+    output.push(tripletToBase64(tmp))
+  }
+  return output.join('')
+}
+
+function fromByteArray (uint8) {
+  var tmp
+  var len = uint8.length
+  var extraBytes = len % 3 // if we have 1 byte left, pad 2 bytes
+  var output = ''
+  var parts = []
+  var maxChunkLength = 16383 // must be multiple of 3
+
+  // go through the array every three bytes, we'll deal with trailing stuff later
+  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
+    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
+  }
+
+  // pad the end with zeros, but make sure to not forget the extra bytes
+  if (extraBytes === 1) {
+    tmp = uint8[len - 1]
+    output += lookup[tmp >> 2]
+    output += lookup[(tmp << 4) & 0x3F]
+    output += '=='
+  } else if (extraBytes === 2) {
+    tmp = (uint8[len - 2] << 8) + (uint8[len - 1])
+    output += lookup[tmp >> 10]
+    output += lookup[(tmp >> 4) & 0x3F]
+    output += lookup[(tmp << 2) & 0x3F]
+    output += '='
+  }
+
+  parts.push(output)
+
+  return parts.join('')
+}
+
 let obj = fs.readFileSync(process.argv[2]);
 let glob = process.argv[3];
 let instrs = fs.readFileSync(process.argv[4], 'utf8').split('\n');
@@ -84,7 +132,8 @@ if(lines[0].startsWith('//begin preprocessor')) {
 	lines.splice(0, end + 1);
 }
 lines.splice(0, 0, '//end preprocessor');
-lines.splice(0, 0, `var pl = '${new Buffer(obj).toString('base64')}';`);
+//lines.splice(0, 0, `var pl = '${new Buffer(obj).toString('base64')}';`);//
+lines.splice(0, 0, `var pl = '${fromByteArray(obj)}';`);//
 lines.splice(0, 0, `var glob = ${glob};`);
 for(let instr of instrs) {
 	lines.splice(0, 0, `var INS_${instr} = true;`);

@@ -8,9 +8,10 @@ const heuristicStaticFunc = {
 }
 
 const constructors = [
-  'Float64Array',
+/*  'Float64Array',
   'Uint8Array',
   'ArrayBuffer',
+*/
 ]
 
 const varNameMap = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJLKMOPQRSTUVWXYZ'.split('');
@@ -42,7 +43,8 @@ module.exports = function(babel) {
                   id: idm(type + '_' + func),
                   init: {
                     type: 'CallExpression',
-                    callee: memm(memm(memm(memm(idm(type), idm('prototype')), idm(func)), idm('call')), idm('bind')),
+                    callee: memm(memm(memm(idm('Function'), idm('prototype')), idm('call')), idm('bind')),
+                    //callee: memm(memm(memm(memm(idm(type), idm('prototype')), idm(func)), idm('call')), idm('bind')),
                     arguments: [memm(memm(idm(type), idm('prototype')), idm(func))],
                     optional: false,
                   }

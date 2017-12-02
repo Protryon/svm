@@ -218,6 +218,7 @@ let instructions = {
 let hasDynamicVariables = false;
 
 let variableRules = {
+	
 	registerifySingleScope: {
 		f: function(vr) {
 			if(hasDynamicVariables) return; // we cannot guarantee whats been set/get w/o dynamic analysis
@@ -245,7 +246,7 @@ let variableRules = {
 		worsens: [],
 		type: 'obfuscation',
 	},
-	destroyUnusedVariables: {
+	/*destroyUnusedVariables: { // TODO: interfered by above
 		f: function(vr) {
 			if(vr.gets.length > 0) return;
 			for(let set of vr.sets) {
@@ -255,7 +256,8 @@ let variableRules = {
 		improves: ['speed'],
 		worsens: [],
 		type: 'obfuscation',
-	}
+	}*/
+	
 };
 
 function applyVariableRules(vr) {
@@ -377,6 +379,7 @@ function processInstruction(lino, ins, args, insert, skipReg) {
 }
 
 let instructionRules = {
+	
 	uselessInstruction: {
 		f: function(line, ins, args) {
 			let rem = false;
@@ -432,12 +435,14 @@ let instructionRules = {
 		worsens: ['size', 'speed'],
 		type: 'obfuscation',
 	},
+	
 	//code factoring
 }
 
 //TODO: variable rules: fold into registers if local
 
 let registerRules = {
+	
 	constantFolding: {
 		f: function(r) {
 			let ar = activeRegisters[r];
@@ -516,7 +521,8 @@ let registerRules = {
 		improves: ['size', 'speed'],
 		worsens: [],
 		type: 'optimization',
-	}*/
+	}
+	*/
 	//GVN
 	//register shuffling
 };
@@ -539,7 +545,6 @@ for(let lino = 0; lino < lines.length; lino++) {
 for(let key in variables) {
 	applyVariableRules(variables[key]);
 }
-
 lines = lines.filter(v => {
 	return v.length > 0 && !v[0].startsWith('//');
 })
@@ -585,6 +590,17 @@ if(lines.length > 15)
 		let len = 5 + (Math.random() * Math.max(lines.length / 3, 15)) | 0;
 		lines.splice(x, 0, ['mov', ':overlap_' + i, 'r0'], ['obf_pushx', len], [':overlap_' + i]);
 	}
+
+
+let trace = false;
+if (trace) {
+	let nl = [];
+	for (let i = 0; i < lines.length; i++) {
+		nl.push(['report', "'" + (nl.length + 2) + "'"]);
+		nl.push(lines[i]);
+	}
+	lines = nl;
+}
 
 fs.writeFileSync(process.argv[3], lines.map(v => {
 	return v.map(v2 => {
