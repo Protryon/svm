@@ -28,6 +28,8 @@ Run `./run.sh` with the repository directory as your current working directory.
 * Function generators
 * Catch external exceptions internally
 * Bundling of client sources pre-compilation
+* Conditional sets
+* Run minifier more
 
 ### Obfuscation
 * Instruction repackaging, shuffling, modification/generation
